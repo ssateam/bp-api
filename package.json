@@ -1,6 +1,6 @@
 {
   "name": "bp-api",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "implements the basic methods of working with bpium api",
   "main": "index.js",
   "scripts": {

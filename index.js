@@ -65,25 +65,6 @@ class BP {
         let response = await this._request(url, 'GET', undefined, params);
         return response.data;
     }
-    async getAllRecords(catalogId, params = {}, maxLimit = 5000, step = 1000 ) {
-        if(!catalogId) throw new Error(`catalogId is required`);
-        let records = { length: step };
-        let offset = params.offset ? params.offset : 0;
-        let filters = params.filters ? params.filters : [];
-        let totalRecords = [];
-        if (records.length == step) {
-            while (records.length > 0 && totalRecords.length < maxLimit) {
-                records = await this.getRecords(catalogId, {
-                    limit: step,
-                    offset: offset,
-                    filters: filters
-                })
-                offset += step;
-                totalRecords = _.concat(totalRecords, records)
-            }
-        }
-        return totalRecords;
-    }
     async getCatalog(catalogId = '') {
         let url = this._getUrl({resource: 'catalog', catalogId: catalogId});
         let response = await this._request(url, 'GET');
@@ -175,6 +156,34 @@ class BP {
         let response = await this._request(url, 'DELETE');
         return response.data;
     }
+    
+    async getAllRecords(catalogId, params = {}, maxLimit = 5000, step = 1000 ) {
+        if(!catalogId) throw new Error(`catalogId is required`);
+        let records = { length: step };
+        let offset = params.offset ? params.offset : 0;
+        let filters = params.filters ? params.filters : [];
+        let totalRecords = [];
+        if (records.length == step) {
+            while (records.length > 0 && totalRecords.length < maxLimit) {
+                records = await this.getRecords(catalogId, {
+                    limit: step,
+                    offset: offset,
+                    filters: filters
+                })
+                offset += step;
+                totalRecords = _.concat(totalRecords, records)
+            }
+        }
+        return totalRecords;
+    }
+    async pause(timer = 500) {
+        return new Promise(function (resolve, reject) {
+            setTimeout(() => {
+                resolve();
+            }, timer);
+        })
+    }
+
 }
 
 module.exports = BP;
