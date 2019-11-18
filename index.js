@@ -68,13 +68,15 @@ class BP {
     async getAllRecords(catalogId, params = {}, maxLimit = 5000, step = 1000 ) {
         if(!catalogId) throw new Error(`catalogId is required`);
         let records = { length: step };
+        let offset = params.offset ? params.offset : 0;
+        let filters = params.filters ? params.filters : [];
         let totalRecords = [];
         if (records.length == step) {
             while (records.length > 0 && totalRecords.length < maxLimit) {
                 records = await this.getRecords(catalogId, {
                     limit: step,
-                    offset: params.offset ? params.offset : 0,
-                    filters: params.filters
+                    offset: offset,
+                    filters: filters
                 })
                 offset += step;
                 totalRecords = _.concat(totalRecords, records)
