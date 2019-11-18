@@ -65,7 +65,7 @@ class BP {
         let response = await this._request(url, 'GET', undefined, params);
         return response.data;
     }
-    async getAllRecords(catalogId, filters = [], maxLimit = 5000, offset = 0, step = 1000 ) {
+    async getAllRecords(catalogId, params = {}, maxLimit = 5000, step = 1000 ) {
         if(!catalogId) throw new Error(`catalogId is required`);
         let records = { length: step };
         let totalRecords = [];
@@ -73,7 +73,7 @@ class BP {
             while (records.length > 0 && totalRecords.length < maxLimit) {
                 records = await this.getRecords(catalogId, {
                     limit: step,
-                    offset: offset,
+                    offset: params.offset ? params.offset : 0,
                     filters: filters
                 })
                 offset += step;
