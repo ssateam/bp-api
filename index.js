@@ -74,7 +74,7 @@ class BP {
                 records = await this.getRecords(catalogId, {
                     limit: step,
                     offset: params.offset ? params.offset : 0,
-                    filters: filters
+                    filters: params.filters
                 })
                 offset += step;
                 totalRecords = _.concat(totalRecords, records)
