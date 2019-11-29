@@ -26,6 +26,10 @@ class BP {
                 return `${this.baseUrl}/catalogs/${opt.catalogId}/views/${opt.viewId}`;
             case 'board':
                 return `${this.baseUrl}/boards/${opt.boardId}/widgets/${opt.widgetId}/${opt.type}`;
+            case 'histories':
+                return `${this.baseUrl}/histories`;
+            case 'relations':
+                return `${this.baseUrl}/catalogs/${opt.catalogId}/records/${opt.recordId}/relations`
             case 'file':
                 return `${this.baseUrl}/files/`;
         }
@@ -85,6 +89,22 @@ class BP {
         if(!boardId) throw new Error(`boardId is required`);
         let url = this._getUrl({resource: 'board', boardId: boardId, widgetId: widgetId, type: type});
         let response = await this._request(url, 'GET', undefined, params);
+        return response.data;
+    }
+    async getHistory(catalogId, recordId = '') {
+        if(!catalogId) throw new Error(`catalogId is required`);
+        let params = {};
+        if (recordId) params.recordId = recordId;
+        params.catalogId = catalogId;
+        let url = this._getUrl({resource: 'histories'});
+        let response = await this._request(url, 'GET', undefined, params);
+        return response.data;
+    }
+    async getRelations(catalogId, recordId) {
+        if(!catalogId) throw new Error(`catalogId is required`);
+        if(!recordId) throw new Error(`recordId is required`);
+        let url = this._getUrl({resource: 'relations', catalogId: catalogId, recordId, recordId});
+        let response = await this._request(url, 'GET');
         return response.data;
     }
     async postRecord(catalogId, data = {}) {
