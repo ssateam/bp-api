@@ -56,11 +56,11 @@ class BP {
         });      
     }
 
-    async getRecordById(catalogId, recordId) {
+    async getRecordById(catalogId, recordId, params = {}) {
         if(!recordId) throw new Error(`recordId is required`);
         if(!catalogId) throw new Error(`catalogId is required`);
         let url = this._getUrl({resource: 'record', catalogId: catalogId, recordId: recordId});
-        let response = await this._request(url, 'GET');
+        let response = await this._request(url, 'GET', undefined, params);
         return response.data;
     }
     async getRecords(catalogId, params = {}) {
