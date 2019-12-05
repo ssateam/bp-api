@@ -100,11 +100,11 @@ class BP {
         let response = await this._request(url, 'GET', undefined, params);
         return response.data;
     }
-    async getRelations(catalogId, recordId) {
+    async getRelations(catalogId, recordId, params = {}) {
         if(!catalogId) throw new Error(`catalogId is required`);
         if(!recordId) throw new Error(`recordId is required`);
         let url = this._getUrl({resource: 'relations', catalogId: catalogId, recordId, recordId});
-        let response = await this._request(url, 'GET');
+        let response = await this._request(url, 'GET', undefined, params);
         return response.data;
     }
     async postRecord(catalogId, data = {}) {
