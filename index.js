@@ -180,18 +180,19 @@ class BP {
     async getAllRecords(catalogId, params = {}, maxLimit = 5000) {
         if(!catalogId) throw new Error(`catalogId is required`);
         if(!params.limit) params.limit = 1000;
+        if(!params.offset) params.offset = 0;
         let records = { length: params.limit };
         let totalRecords = [];
-        if (records.length == limit) {
+        if (records.length == params.limit) {
             while (records.length > 0 && totalRecords.length < maxLimit) {
                 records = await this.getRecords(catalogId, params)
-                offset += limit;
+                params.offset += params.limit;
                 totalRecords = _.concat(totalRecords, records)
             }
         }
         return totalRecords;
     }
-    
+
     async pause(timer = 500) {
         return new Promise(function (resolve, reject) {
             setTimeout(() => {
