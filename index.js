@@ -177,25 +177,21 @@ class BP {
         return response.data;
     }
     
-    async getAllRecords(catalogId, params = {}, maxLimit = 5000, step = 1000 ) {
+    async getAllRecords(catalogId, params = {}, maxLimit = 5000) {
         if(!catalogId) throw new Error(`catalogId is required`);
-        let records = { length: step };
-        let offset = params.offset ? params.offset : 0;
-        let filters = params.filters ? params.filters : [];
+        if(!params.limit) params.limit = 1000;
+        let records = { length: params.limit };
         let totalRecords = [];
-        if (records.length == step) {
+        if (records.length == limit) {
             while (records.length > 0 && totalRecords.length < maxLimit) {
-                records = await this.getRecords(catalogId, {
-                    limit: step,
-                    offset: offset,
-                    filters: filters
-                })
-                offset += step;
+                records = await this.getRecords(catalogId, params)
+                offset += limit;
                 totalRecords = _.concat(totalRecords, records)
             }
         }
         return totalRecords;
     }
+    
     async pause(timer = 500) {
         return new Promise(function (resolve, reject) {
             setTimeout(() => {
