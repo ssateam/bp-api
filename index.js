@@ -50,9 +50,7 @@ class BP {
             headers: {
                 'Content-type': 'application/json'
             },
-            data: {
-                values: data
-            }
+            data: data
         });      
     }
 
@@ -111,7 +109,7 @@ class BP {
         if(!catalogId) throw new Error(`catalogId is required`);
         if(typeof data != 'object') throw new Error(`data must be an object`);
         let url = this._getUrl({resource: 'record', catalogId: catalogId});
-        let response = await this._request(url, 'POST', data);
+        let response = await this._request(url, 'POST', { values: data });
         return response.data;
     }
     async postCatalog(data = {}) {
@@ -134,7 +132,7 @@ class BP {
         if(typeof data != 'object') throw new Error(`data must be an object`);
         if (_.isEmpty(data)) throw new Error(`data cant't be empty`);
         let url = this._getUrl({resource: 'record', catalogId: catalogId, recordId: recordId});
-        let response = await this._request(url, 'PATCH', data);
+        let response = await this._request(url, 'PATCH', { values: data });
         return response.data;
     }
     async patchCatalog(catalogId, data = {}) {
