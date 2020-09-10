@@ -21,7 +21,10 @@
   "homepage": "https://github.com/nachpav/bp-api#readme",
   "dependencies": {
     "axios": "^0.19.0",
+    "form-data": "^3.0.0",
+    "fs": "0.0.1-security",
     "lodash": "^4.17.15",
+    "mime-types": "^2.1.27",
     "qs": "^6.9.1"
   }
 }
