@@ -243,7 +243,7 @@ class BP {
         "typeStorage": "remoteStorage" 
     };
     let fileDataFromBpiumJSON = await this._request(urlFile, "POST", dataPostToBpium);
-    let file = await fs.readFileSync(String(params.filePath), {encoding: "utf8"});
+    let file = fs.readFileSync(String(params.filePath), {});
     let formData = new FormData();
     formData.append("key", fileDataFromBpiumJSON.fileKey);
     formData.append("acl", "private");
@@ -251,9 +251,7 @@ class BP {
     formData.append("Policy", fileDataFromBpiumJSON.police);
     formData.append("Signature", fileDataFromBpiumJSON.signature);
     formData.append("Content-Type", mime.lookup(params.filePath));
-    formData.append("file", file.toString(), {
-      type: mime.lookup(params.filePath),
-    });
+    formData.append("file", new Buffer.from(file));
     let formHeaders = formData.getHeaders();
     let formLength = formData.getLengthSync();
     await axios({ method: "POST",
