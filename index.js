@@ -257,7 +257,7 @@ class BP {
     let formHeaders = formData.getHeaders();
     let formLength = formData.getLengthSync();
     await axios({ method: "POST",
-        url: dataPostToBpium.uploadUrl,
+        url: fileDataFromBpiumJSON.uploadUrl,
         data: formData,
         headers: {
             ...formHeaders,
