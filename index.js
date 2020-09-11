@@ -243,7 +243,7 @@ class BP {
         "typeStorage": "remoteStorage" 
     };
     let fileDataFromBpiumJSON = await this._request(urlFile, "POST", dataPostToBpium);
-    let file = fs.readFileSync(String(params.filePath), {});
+    let file = fs.createReadStream(filePath);
     let formData = new FormData();
     formData.append("key", fileDataFromBpiumJSON.fileKey);
     formData.append("acl", "private");
@@ -253,15 +253,22 @@ class BP {
     formData.append("Content-Type", mime.lookup(params.filePath));
     formData.append("file", new Buffer.from(file));
     let formHeaders = formData.getHeaders();
-    let formLength = formData.getLengthSync();
-    await axios({ method: "POST",
+    await formData.getLength(async function (err, length) {
+      if (err) {
+        this._error(err);
+        return;
+      }
+      await axios({
+        method: "POST",
         url: fileDataFromBpiumJSON.uploadUrl,
         data: formData,
         headers: {
-            ...formHeaders,
-            "Content-Length": formLength,
+          ...formHeaders,
+          "Content-Length": length,
         }
-    });
+      });
+    })
+    
     let paramsForWriteRecord ={}
     paramsForWriteRecord[fieldId] = [{
         id: fileDataFromBpiumJSON.fileId
