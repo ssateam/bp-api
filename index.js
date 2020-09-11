@@ -246,7 +246,7 @@ class BP {
         "typeStorage": "remoteStorage" 
     };
     let fileDataFromBpiumJSON = await this._request(urlFile, "POST", dataPostToBpium);
-    let file = fs.createReadStream(filePath);
+    let file = fs.createReadStream(params.filePath);
     let formData = new FormData();
     formData.append("key", fileDataFromBpiumJSON.fileKey);
     formData.append("acl", "private");
