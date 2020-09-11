@@ -3,7 +3,6 @@ const qs = require('qs');
 const _ = require('lodash');
 const fs = require("fs");
 const FormData = require("form-data");
-const mime = require('mime-types')
 const path = require('path')
 
 
@@ -253,7 +252,7 @@ class BP {
     formData.append("AWSAccessKeyId", fileDataFromBpiumJSON.AWSAccessKeyId);
     formData.append("Policy", fileDataFromBpiumJSON.police);
     formData.append("Signature", fileDataFromBpiumJSON.signature);
-    formData.append("Content-Type", mime.lookup(params.filePath));
+    formData.append('Content-Type', 'application/octet-stream');
     formData.append("file", file);
     let formHeaders = formData.getHeaders();
     await formData.getLength(async function (err, length) {
