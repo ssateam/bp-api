@@ -4,6 +4,7 @@ const _ = require('lodash');
 const fs = require("fs");
 const FormData = require("form-data");
 const mime = require('mime-types')
+const path = require('path')
 
 
 class BP {
@@ -227,14 +228,17 @@ class BP {
     return totalRecords;
   }
 
-    //в обьекте params должны быть ключи:
-    //   name - имя файла в записи
+    //в обьекте params должны быть ключи:    
     //   filePath - путь к файлу 
+    //   name - имя файла в записи. Если параметр не указан - возьмёт имя файла из параметра filePath
   async postFile(catalogId, fieldId, params = {}) {
     if (!catalogId) throw new Error(`catalogId is required`);
-    if (!fieldId) throw new Error(`fieldId is required`);
-    if (!params.name) throw new Error(`params.name is required`);
+    if (!fieldId) throw new Error(`fieldId is required`);    
     if (!params.filePath) throw new Error(`params.filePath is required`);
+    if (!params.name) {
+      params.name = path.basename(params.filePath)
+    }
+    
     let urlFile = this._getUrl({ resource: "file" });
     let dataPostToBpium = { 
         catalogId: catalogId,
