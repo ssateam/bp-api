@@ -257,7 +257,7 @@ class BP {
       if (err) {
         this._error(err);
         return;
-      }
+      }ж
       await axios({
         method: "POST",
         url: fileDataFromBpiumJSON.uploadUrl,
