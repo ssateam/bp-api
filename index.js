@@ -237,8 +237,7 @@ class BP {
     if (!params.filePath) throw new Error(`params.filePath is required`);
     if (!params.name) {
       params.name = path.basename(params.filePath)
-    }
-    
+    }    
     let urlFile = this._getUrl({ resource: "file" });
     let dataPostToBpium = { 
         catalogId: catalogId,
