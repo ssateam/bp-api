@@ -251,7 +251,7 @@ class BP {
     formData.append("Policy", fileDataFromBpiumJSON.police);
     formData.append("Signature", fileDataFromBpiumJSON.signature);
     formData.append("Content-Type", mime.lookup(params.filePath));
-    formData.append("file", new Buffer.from(file));
+    formData.append("file", file);
     let formHeaders = formData.getHeaders();
     await formData.getLength(async function (err, length) {
       if (err) {
@@ -268,7 +268,6 @@ class BP {
         }
       });
     })
-    
     let paramsForWriteRecord ={}
     paramsForWriteRecord[fieldId] = [{
         id: fileDataFromBpiumJSON.fileId
