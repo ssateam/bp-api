@@ -1,6 +1,8 @@
 const axios = require('axios');
 const qs = require('qs');
 const _ = require('lodash');
+const FormData = require("form-data");
+const { reject } = require('lodash');
 
 class BP {
     constructor(domen, login, password, protocol = 'https', timeout = 30000) {
@@ -29,7 +31,7 @@ class BP {
             case 'histories':
                 return `${this.baseUrl}/histories`;
             case 'relations':
-                return `${this.baseUrl}/catalogs/${opt.catalogId}/records/${opt.recordId}/relations`
+                return `${this.baseUrl}/catalogs/${opt.catalogId}/records/${opt.recordId}/relations`;
             case 'file':
                 return `${this.baseUrl}/files/`;
         }
@@ -50,9 +52,7 @@ class BP {
             headers: {
                 'Content-type': 'application/json'
             },
-            data: {
-                values: data
-            }
+            data:data
         });      
     }
 
@@ -111,7 +111,7 @@ class BP {
         if(!catalogId) throw new Error(`catalogId is required`);
         if(typeof data != 'object') throw new Error(`data must be an object`);
         let url = this._getUrl({resource: 'record', catalogId: catalogId});
-        let response = await this._request(url, 'POST', data);
+        let response = await this._request(url, 'POST', { values: data });
         return response.data;
     }
     async postCatalog(data = {}) {
@@ -134,7 +134,7 @@ class BP {
         if(typeof data != 'object') throw new Error(`data must be an object`);
         if (_.isEmpty(data)) throw new Error(`data cant't be empty`);
         let url = this._getUrl({resource: 'record', catalogId: catalogId, recordId: recordId});
-        let response = await this._request(url, 'PATCH', data);
+        let response = await this._request(url, 'PATCH', { values: data });
         return response.data;
     }
     async patchCatalog(catalogId, data = {}) {
@@ -195,6 +195,56 @@ class BP {
             }
         }
         return totalRecords;
+    }
+    async uploadFile(stream, name = '', mimeType = '', typeStorage = "remoteStorage" ) {
+        if (!stream) throw new Error(`readble stream is required`); 
+        let urlFile = this._getUrl({ resource: "file" });
+        let fileDataFromBpiumJSON = await this._request(urlFile, "POST", { 
+            name: name, 
+            typeStorage: typeStorage 
+        });
+
+        let formData = new FormData();
+        formData.append("key", fileDataFromBpiumJSON.data.fileKey);
+        formData.append("acl", "private");
+        formData.append("AWSAccessKeyId", fileDataFromBpiumJSON.data.AWSAccessKeyId);
+        formData.append("Policy", fileDataFromBpiumJSON.data.police);
+        formData.append("Signature", fileDataFromBpiumJSON.data.signature);
+        formData.append('Content-Type', mimeType);
+        formData.append("file", stream);
+
+        let formHeaders = formData.getHeaders();
+        let fileLength = await new Promise((resolve, reject) => {
+            formData.getLength(async function (err, length) {
+                if (err) {
+                    console.log(err);
+                    this._error(err);
+                    reject(err)
+                };
+                resolve(length)
+            })
+        })
+        try {
+            await axios({
+                method: "POST",
+                url: fileDataFromBpiumJSON.data.uploadUrl,
+                data: formData,
+                headers: {
+                ...formHeaders,
+                "Content-Length": fileLength,
+                }
+            });
+            return {
+                src: `${fileDataFromBpiumJSON.data.uploadUrl}/${fileDataFromBpiumJSON.data.fileKey}`,
+                mimeType: mimeType,
+                title: name,
+                size: fileLength
+            }
+        } catch (e) {
+            console.log(e);
+        }
+        
+
     }
     async pause(timer = 500) {
         return new Promise(function (resolve, reject) {
