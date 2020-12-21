@@ -52,7 +52,11 @@ class BP {
             headers: {
                 'Content-type': 'application/json'
             },
-            data:data
+<<<<<<< HEAD
+            data: data
+=======
+            data: data
+>>>>>>> ea5060a94ae7be07debf8346409967fa930b1ced
         });      
     }
 
@@ -177,25 +181,22 @@ class BP {
         return response.data;
     }
     
-    async getAllRecords(catalogId, params = {}, maxLimit = 5000, step = 1000 ) {
+    async getAllRecords(catalogId, params = {}, maxLimit = 5000) {
         if(!catalogId) throw new Error(`catalogId is required`);
-        let records = { length: step };
-        let offset = params.offset ? params.offset : 0;
-        let filters = params.filters ? params.filters : [];
+        if(!params.limit) params.limit = 1000;
+        if(!params.offset) params.offset = 0;
+        let records = { length: params.limit };
         let totalRecords = [];
-        if (records.length == step) {
+        if (records.length == params.limit) {
             while (records.length > 0 && totalRecords.length < maxLimit) {
-                records = await this.getRecords(catalogId, {
-                    limit: step,
-                    offset: offset,
-                    filters: filters
-                })
-                offset += step;
+                records = await this.getRecords(catalogId, params)
+                params.offset += params.limit;
                 totalRecords = _.concat(totalRecords, records)
             }
         }
         return totalRecords;
     }
+<<<<<<< HEAD
     async uploadFile(stream, name = '', mimeType = '', typeStorage = "remoteStorage" ) {
         if (!stream) throw new Error(`readble stream is required`); 
         let urlFile = this._getUrl({ resource: "file" });
@@ -246,6 +247,9 @@ class BP {
         
 
     }
+=======
+
+>>>>>>> ea5060a94ae7be07debf8346409967fa930b1ced
     async pause(timer = 500) {
         return new Promise(function (resolve, reject) {
             setTimeout(() => {
