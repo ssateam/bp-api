@@ -52,11 +52,7 @@ class BP {
             headers: {
                 'Content-type': 'application/json'
             },
-<<<<<<< HEAD
             data: data
-=======
-            data: data
->>>>>>> ea5060a94ae7be07debf8346409967fa930b1ced
         });      
     }
 
@@ -196,7 +192,6 @@ class BP {
         }
         return totalRecords;
     }
-<<<<<<< HEAD
     async uploadFile(stream, name = '', mimeType = '', typeStorage = "remoteStorage" ) {
         if (!stream) throw new Error(`readble stream is required`); 
         let urlFile = this._getUrl({ resource: "file" });
@@ -247,9 +242,6 @@ class BP {
         
 
     }
-=======
-
->>>>>>> ea5060a94ae7be07debf8346409967fa930b1ced
     async pause(timer = 500) {
         return new Promise(function (resolve, reject) {
             setTimeout(() => {
