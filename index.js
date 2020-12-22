@@ -192,21 +192,27 @@ class BP {
         }
         return totalRecords;
     }
-    async uploadFile(stream, name = '', mimeType = '', typeStorage = "remoteStorage" ) {
-        if (!stream) throw new Error(`readble stream is required`); 
+    async getUploadFileKeys(name = '', mimeType = '', typeStorage = "remoteStorage" ) {
         let urlFile = this._getUrl({ resource: "file" });
-        let fileDataFromBpiumJSON = await this._request(urlFile, "POST", { 
+        let response = await this._request(urlFile, "POST", { 
             name: name, 
-            typeStorage: typeStorage 
+            typeStorage: typeStorage
         });
-
+        let fileKeys = response.data
+        fileKeys.name = name
+        fileKeys.mimeType = mimeType
+        return fileKeys
+    }
+    async uploadFile(fileKeys, stream) {
+        if (!stream) throw new Error(`readble stream is required`); 
+        if (!fileKeys) throw new Error(`fileKeys is required`); 
         let formData = new FormData();
-        formData.append("key", fileDataFromBpiumJSON.data.fileKey);
+        formData.append("key", fileKeys.fileKey);
         formData.append("acl", "private");
-        formData.append("AWSAccessKeyId", fileDataFromBpiumJSON.data.AWSAccessKeyId);
-        formData.append("Policy", fileDataFromBpiumJSON.data.police);
-        formData.append("Signature", fileDataFromBpiumJSON.data.signature);
-        formData.append('Content-Type', mimeType);
+        formData.append("AWSAccessKeyId", fileKeys.AWSAccessKeyId);
+        formData.append("Policy", fileKeys.police);
+        formData.append("Signature", fileKeys.signature);
+        formData.append('Content-Type', fileKeys.mimeType);
         formData.append("file", stream);
 
         let formHeaders = formData.getHeaders();
@@ -223,7 +229,7 @@ class BP {
         try {
             await axios({
                 method: "POST",
-                url: fileDataFromBpiumJSON.data.uploadUrl,
+                url: fileKeys.uploadUrl,
                 data: formData,
                 headers: {
                 ...formHeaders,
@@ -231,9 +237,9 @@ class BP {
                 }
             });
             return {
-                src: `${fileDataFromBpiumJSON.data.uploadUrl}/${fileDataFromBpiumJSON.data.fileKey}`,
-                mimeType: mimeType,
-                title: name,
+                src: `${fileKeys.uploadUrl}/${fileKeys.fileKey}`,
+                mimeType: fileKeys.mimeType,
+                title: fileKeys.name,
                 size: fileLength
             }
         } catch (e) {
