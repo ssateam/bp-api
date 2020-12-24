@@ -91,7 +91,7 @@ class BP {
         let response = await this._request(url, 'GET', undefined, params);
         return response.data;
     }
-    async getHistory(catalogId, recordId = '') {
+    async getHistory(catalogId, recordId = '', params = {}) {
         if(!catalogId) throw new Error(`catalogId is required`);
         let params = {};
         if (recordId) params.recordId = recordId;
