@@ -93,7 +93,6 @@ class BP {
     }
     async getHistory(catalogId, recordId = '', params = {}) {
         if(!catalogId) throw new Error(`catalogId is required`);
-        let params = {};
         if (recordId) params.recordId = recordId;
         params.catalogId = catalogId;
         let url = this._getUrl({resource: 'histories'});
