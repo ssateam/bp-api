@@ -34,6 +34,8 @@ class BP {
                 return `${this.baseUrl}/catalogs/${opt.catalogId}/records/${opt.recordId}/relations`;
             case 'file':
                 return `${this.baseUrl}/files/`;
+            case 'values':
+                return `${this.baseUrl}/catalogs/${opt.catalogId}/values`;
         }
     }
     async _request(url, method, data = {}, params = {}) {
@@ -98,6 +100,12 @@ class BP {
         let url = this._getUrl({resource: 'histories'});
         let response = await this._request(url, 'GET', undefined, params);
         return response.data;
+    }
+    async getHistory(catalogId, params = {}) {
+      if(!catalogId) throw new Error(`catalogId is required`);
+      let url = this._getUrl({resource: 'values'});
+      let response = await this._request(url, 'GET', undefined, params);
+      return response.data;
     }
     async getRelations(catalogId, recordId, params = {}) {
         if(!catalogId) throw new Error(`catalogId is required`);
