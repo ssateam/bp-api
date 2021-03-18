@@ -101,7 +101,7 @@ class BP {
         let response = await this._request(url, 'GET', undefined, params);
         return response.data;
     }
-    async getHistory(catalogId, params = {}) {
+    async getValues(catalogId, params = {}) {
       if(!catalogId) throw new Error(`catalogId is required`);
       let url = this._getUrl({resource: 'values'});
       let response = await this._request(url, 'GET', undefined, params);
