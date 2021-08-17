@@ -103,7 +103,7 @@ class BP {
   }
   async getValues(catalogId, params = {}) {
     if (!catalogId) throw new Error(`catalogId is required`)
-    let url = this._getUrl({ resource: 'values' })
+    let url = this._getUrl({ resource: 'values', catalogId: catalogId })
     let response = await this._request(url, 'GET', undefined, params)
     return response.data
   }
@@ -201,11 +201,10 @@ class BP {
   }
   async getUploadFileKeys(name = '', mimeType = '', typeStorage = 'remoteStorage') {
     let urlFile = this._getUrl({ resource: 'file' })
-    let response = await this._request(urlFile, 'POST', {
+    let { data: fileKeys } = await this._request(urlFile, 'POST', {
       name: name,
       typeStorage: typeStorage,
     })
-    let fileKeys = response.data
     fileKeys.name = name
     fileKeys.mimeType = mimeType
     return fileKeys
@@ -241,9 +240,9 @@ class BP {
         headers: {
           ...formHeaders,
           'Content-Length': fileLength,
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity,
         },
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
       })
       return {
         src: `${fileKeys.uploadUrl}/${fileKeys.fileKey}`,
