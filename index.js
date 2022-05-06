@@ -2,7 +2,6 @@ const axios = require('axios')
 const qs = require('qs')
 const _ = require('lodash')
 const FormData = require('form-data')
-const { reject } = require('lodash')
 
 class BP {
   constructor(domen, login, password, protocol = 'https', timeout = 30000) {
@@ -153,10 +152,19 @@ class BP {
     return response.data
   }
   async patchSection(sectionId, data = {}) {
-    if (!catalogId) throw new Error(`sectionId is required`)
+    if (!sectionId) throw new Error(`sectionId is required`)
     if (typeof data != 'object') throw new Error(`data must be an object`)
     if (_.isEmpty(data)) throw new Error(`data cant't be empty`)
     let url = this._getUrl({ resource: 'section', sectionId: sectionId })
+    let response = await this._request(url, 'PATCH', data)
+    return response.data
+  }
+  async patchView(catalogId, viewId, data = {}) {
+    if (!catalogId) throw new Error(`sectionId is required`)
+    if (!viewId) throw new Error(`viewId is required`)
+    if (typeof data != 'object') throw new Error(`data must be an object`)
+    if (_.isEmpty(data)) throw new Error(`data cant't be empty`)
+    let url = this._getUrl({ resource: 'view', catalogId: catalogId, viewId: viewId })
     let response = await this._request(url, 'PATCH', data)
     return response.data
   }
