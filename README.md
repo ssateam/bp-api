@@ -31,4 +31,4 @@ await bp.patchRecord(catalogId, records[0].id, {
 })
 ```
 
-# [params filters and methods](https://silent-lad.github.io/Vue2BaremetricsCalendar/#/](https://docs.bpium.ru/integrations/api/data/records))
+# [params filters and methods](https://docs.bpium.ru/integrations/api/)
