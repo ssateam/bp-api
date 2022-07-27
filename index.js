@@ -36,8 +36,11 @@ class BP {
     this.login = login
     this.password = password
     this.timeout = timeout
+    this.protocol = protocol
+    this.domen = domen
     this.baseUrl = `${protocol}://${domen}/api/v1`
   }
+
   _getUrl(opt) {
     switch (opt.resource) {
       case 'record':
@@ -58,18 +61,67 @@ class BP {
         return `${this.baseUrl}/files/`
       case 'values':
         return `${this.baseUrl}/catalogs/${opt.catalogId}/values`
+      case 'login':
+        return `${this.protocol}://${this.domen}/auth/login`
     }
   }
+
   /**
-   * https://docs.bpium.ru/integrations/api
-   * 
+   * Обновляет сессию 
+   * @returns ответ на запрос авторизации
+   */
+  async _updateAuth() {
+    const authUrl = this._getUrl({ resource: 'login' })
+    const authResult = await axios({
+      auth: {
+        username: this.login,
+        password: this.password,
+      },
+      timeout: this.timeout,
+      url: authUrl,
+      method: 'GET',
+      headers: {
+        "Content-type": "application/x-www-form-urlencoded"
+      },
+      maxRedirects: 0,
+    })
+    this.sidCookie = (_.get(authResult, 'headers["set-cookie"]', []).find(item => item.startsWith('connect.sid=')) ?? '')
+      .replaceAll(/(connect\.sid\=[^;]+);.*$/gm, '$1')
+
+    return authResult
+  }
+
+  /**
    * @param {string} url к ресурсу
    * @param {string} method метод обращения к ресурсу
    * @param {Object} data параметры тела запроса
    * @param {Object} params параметры запроса
    * @returns вернет полный ответ из библиотеки axios
    */
-  async _request(url, method, data = {}, params = {}) {
+  async _requestWithAuthCookie(url, method, data = {}, params = {}) {
+    return await axios({
+      timeout: this.timeout,
+      url: url,
+      method: method,
+      params: params,
+      paramsSerializer: function (params) {
+        return qs.stringify(params)
+      },
+      headers: {
+        "Cookie": this.sidCookie,
+        'Content-type': 'application/json',
+      },
+      data: data,
+    })
+  }
+  /**
+   * @param { string } url к ресурсу
+   * @param { string } method метод обращения к ресурсу
+   * @param { Object } data параметры тела запроса
+   * @param { Object } params параметры запроса
+   * @returns вернет полный ответ из библиотеки axios
+   */
+  async _requestWithAuthBasic(url, method, data = {}, params = {}) {
     return await axios({
       auth: {
         username: this.login,
@@ -87,6 +139,42 @@ class BP {
       },
       data: data,
     })
+  }
+
+  /**
+   * https://docs.bpium.ru/integrations/api
+   * 
+   * @param {string} url к ресурсу
+   * @param {string} method метод обращения к ресурсу
+   * @param {Object} data параметры тела запроса
+   * @param {Object} params параметры запроса
+   * @returns вернет полный ответ из библиотеки axios
+   */
+  async _request(url, method, data = {}, params = {}) {
+    if (!this.sidCookie) {
+      await this._updateAuth()
+    }
+    try {
+      return await this._requestWithAuthCookie(url, method, data, params)
+    } catch (e1) {
+      const isAuthError = _.get(e1, 'response.status', 0) === 401
+      if (this.sidCookie && isAuthError) {
+        try {
+          await this._updateAuth()
+          return await this._requestWithAuthCookie(url, method, data, params)
+        } catch (e2) {
+          const isAuthError = _.get(e2, 'response.status', 0) === 401
+          if (isAuthError) {
+            return await this._requestWithAuthBasic(url, method, data, params)
+          }
+          else {
+            throw e2
+          }
+        }
+      } else {
+        throw e1
+      }
+    }
   }
 
   /**
@@ -114,9 +202,6 @@ class BP {
     const url = this._getUrl({ resource: 'record', catalogId, recordId: '' })
     const response = await this._request(url, 'GET', undefined, params)
     return response.data
-  }
-  async addCatalog() {
-
   }
   /**
    * https://docs.bpium.ru/integrations/api/data/catalogs#poluchit-katalog

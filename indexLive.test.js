@@ -93,9 +93,9 @@ it('config file is present and correct', () => {
 
 describe('test on live bpium', () => {
   if (!config) throw new Error('config.js should be defined')
-  jest.setTimeout(15000)
+  jest.setTimeout(30000)
   const BP = require('./index')
-  const bp = new BP(config.domen, config.username, config.password)
+  const bp = new BP(config.domen, config.username, config.password, config.protocol)
   let tempCatalogId = null
   let tempCatalog = null
   let tempRecordId = null
@@ -118,8 +118,6 @@ describe('test on live bpium', () => {
   }
 
   const removeTempCatalog = async () => {
-    const BP = require('./index')
-    const bp = new BP(config.domen, config.username, config.password)
     const catalogsUrl = bp._getUrl({ resource: 'catalog', catalogId: tempCatalogId })
     await bp._request(catalogsUrl, 'DELETE')
   }
@@ -136,15 +134,49 @@ describe('test on live bpium', () => {
     const BP = require('./index')
     const wrongPassUser = config.username + 'wrong'
 
-    const bpWrong = new BP(config.domen, wrongPassUser, wrongPassUser)
+    const bpWrong = new BP(config.domen, wrongPassUser, wrongPassUser, config.protocol)
+    const spy_requestWithAuthBasic = jest.spyOn(bpWrong, '_requestWithAuthBasic')
 
     await expect(bpWrong.getRecords(100000)).rejects.toThrow(Error)
     await expect(bpWrong.getRecords(tempCatalogId)).rejects.toThrow(Error)
+
+    expect(spy_requestWithAuthBasic).not.toBeCalled()
+  })
+
+  it('Test width closed session ', async () => {
+    const BP = require('./index')
+    const mockbpCookieTest = new BP(config.domen, config.username, config.password, config.protocol)
+    await expect(mockbpCookieTest.getCatalog()).resolves.toHaveProperty('[0].fields')
+
+    //Портим сессию
+    mockbpCookieTest.sidCookie = 'badSessionCookieString'
+    const spy_requestWithAuthBasic = jest.spyOn(mockbpCookieTest, '_requestWithAuthBasic')
+    const spy_updateAuth = jest.spyOn(mockbpCookieTest, '_updateAuth')
+    await expect(mockbpCookieTest.getCatalog()).resolves.toHaveProperty('[0].fields')
+    expect(spy_updateAuth).toBeCalled()
+    expect(spy_requestWithAuthBasic).not.toBeCalled()
+  })
+
+  it('Test width bad session access and last basicRequest', async () => {
+    const BP = require('./index')
+
+    const mockbpCookieTest = new BP(config.domen, config.username, config.password, config.protocol)
+    await expect(mockbpCookieTest.getCatalog()).resolves.toHaveProperty('[0].fields')
+
+    //Портим доступ по сессии
+    Object.defineProperty(mockbpCookieTest, 'sidCookie', {
+      get: function () { return 'badSessionCookieString' },
+      set: function (newValue) { },
+    })
+
+    const spy_requestWithAuthBasic = jest.spyOn(mockbpCookieTest, '_requestWithAuthBasic')
+    await expect(mockbpCookieTest.getCatalog()).resolves.toHaveProperty('[0].fields')
+    expect(spy_requestWithAuthBasic).toBeCalled()
   })
 
   it('Test patch catalog', async () => {
     expect(tempCatalog).toHaveProperty('name', testCatalogStruct.name)
-    await  bp.patchCatalog(tempCatalog.id, { name: "Changed name catalog" })
+    await bp.patchCatalog(tempCatalog.id, { name: "Changed name catalog" })
 
     const updatedCatalog = await bp.getCatalog(tempCatalogId)
     expect(updatedCatalog).toHaveProperty('name', "Changed name catalog")

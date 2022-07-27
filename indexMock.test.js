@@ -2,7 +2,7 @@ const axiosMock = jest.mock('axios')
 const axios = require('axios')
 const BP = require('./index')
 
-afterAll(() => { debugger; axios.mockRestore() })
+afterAll(() => {  axios.mockRestore() })
 
 const domen = 'domen'
 const login = 'login'
