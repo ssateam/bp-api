@@ -194,7 +194,19 @@ class BP {
   /**
    * https://docs.bpium.ru/integrations/api/data/records#poluchit-zapisi
    * @param {int|string} catalogId  id каталога
-   * @param {int|string} params описание параметров в ссылке 
+   * @param {Object} params описание параметров в ссылке. 
+   * Если нужно использовать расширенный фильтр, то его можно подать так:
+   * ```
+   *  const records = await bp.getRecords(tempCatalogId, {
+      filters: JSON.stringify(
+        {
+          "$and": [
+            {2: '1'},
+            {4: { "$or": [[1, 2], [2]] }}
+          ]
+        })
+    })
+   * ```
    * @returns вернет массив записей
    */
   async getRecords(catalogId, params = {}) {

@@ -266,7 +266,7 @@ describe('test on live bpium', () => {
   })
 
   it('Test patch field', async () => {
-    const record = await bp.getRecordById(tempCatalogId, tempRecordId) 
+    const record = await bp.getRecordById(tempCatalogId, tempRecordId)
     expect(record).toHaveProperty('id', '1')
     expect(record).toHaveProperty('values.[2]', 'test')
     expect(record).toHaveProperty('values.[4]', ['1', '2'])
@@ -276,6 +276,27 @@ describe('test on live bpium', () => {
     const patchedRecord = await bp.getRecordById(tempCatalogId, tempRecordId)
     expect(patchedRecord).toHaveProperty('values.[4]', ['3'])
     expect(patchedRecord).toHaveProperty('values.[2]', 'newText')
+  })
+
+  it('Test select with complex filter', async () => {
+    await bp.postRecord(tempCatalogId, { '2': '1', '4': [] })
+    await bp.postRecord(tempCatalogId, { '2': '1', '4': [2] })
+    await bp.postRecord(tempCatalogId, { '2': '3', '4': [3] })
+    await bp.postRecord(tempCatalogId, { '2': '2,3', '4': [2, 3] })
+
+    const result1And2 = await bp.getRecords(tempCatalogId, { filters: [{ fieldId: 4, value: [2, 3] }] })
+    expect(result1And2).toHaveLength(1)
+
+    const records = await bp.getRecords(tempCatalogId, {
+      filters: JSON.stringify(
+        {
+          "$and": [
+            {2: '1'},
+            {4: { "$or": [[1, 2], [2]] }}
+          ]
+        })
+    })
+    console.log(JSON.stringify(records, null, '  '))
   })
 
   it('Test file methods', async () => {
