@@ -85,6 +85,37 @@ const testCatalogStruct = {
   ],
 }
 
+const testCatalogStruct2 = {
+  name: 'New catalog2',
+  icon: 'icon',
+  sectionId: '2',
+  fields: [
+    {
+      name: 'Секция2',
+      hint: '',
+      type: 'group',
+      config: {},
+    },
+    {
+      name: 'Текст2',
+      hint: 'Подсказка к полю текст2',
+      type: 'text',
+      config: {
+        type: 'text',
+      },
+    }, {
+      name: 'link',
+      hint: 'Связь с другой записью',
+      type: 'object',
+      config: {
+        multiselect: true,
+        catalogs: [{
+          "id": "?"
+        }]
+      }
+    }]
+}
+
 it('config file is present and correct', () => {
   expect(config).toHaveProperty('domen')
   expect(config).toHaveProperty('username')
@@ -99,13 +130,18 @@ describe('test on live bpium', () => {
   let tempCatalogId = null
   let tempCatalog = null
   let tempRecordId = null
-  const getTempRecord = async () => {
-    return await bp.getRecordById(tempCatalogId, tempRecordId)
-  }
+  let tempCatalogId2 = null
+  let tempCatalog2 = null
+  let tempRecordId2 = null
 
-  const createTempCatalog = async () => {
+
+  const createTempCatalogs = async () => {
     const resultPostCatalog = (await bp.postCatalog(testCatalogStruct))
     tempCatalogId = resultPostCatalog.id
+
+    testCatalogStruct2.fields[2].config.catalogs[0].id = tempCatalogId
+    const resultPostCatalog2 = (await bp.postCatalog(testCatalogStruct2))
+    tempCatalogId2 = resultPostCatalog2.id
 
     tempCatalog = await bp.getCatalog(tempCatalogId)
     tempRecordId = (
@@ -115,19 +151,30 @@ describe('test on live bpium', () => {
         4: [1, 2],
       })
     ).id
+
+    tempCatalog2 = await bp.getCatalog(tempCatalogId2)
+    tempRecordId2 = (
+      await bp.postRecord(tempCatalogId2, {
+        2: 'test',
+        3: [{ catalogId: tempCatalogId, recordId: tempRecordId }],
+      })
+    ).id
   }
 
-  const removeTempCatalog = async () => {
+  const removeTempCatalogs = async () => {
     const catalogsUrl = bp._getUrl({ resource: 'catalog', catalogId: tempCatalogId })
     await bp._request(catalogsUrl, 'DELETE')
+
+    const catalogsUrl2 = bp._getUrl({ resource: 'catalog', catalogId: tempCatalogId2 })
+    await bp._request(catalogsUrl2, 'DELETE')
   }
 
   beforeAll(() => {
-    return createTempCatalog()
+    return createTempCatalogs()
   })
 
   afterAll(() => {
-    return removeTempCatalog()
+    return removeTempCatalogs()
   })
 
   it('Test unathorized access', async () => {
@@ -206,15 +253,27 @@ describe('test on live bpium', () => {
     }
   })
 
+  it('Test add record with link', async () => {
+    const { id: newRecordId } = await bp.postRecord(tempCatalogId2, {
+      '2': 'some test',
+      '3': [{ catalogId: tempCatalogId, recordId: tempRecordId }]
+    })
+    expect(newRecordId).not.toBeNull()
+
+    const newRecord = await bp.getRecordById(tempCatalogId2, newRecordId, { fields: [2, { id: 3 }] })
+    // console.log('newRecord = ', JSON.stringify(newRecord, null, 2))
+
+  })
+
   it('Test patch field', async () => {
-    const record = await getTempRecord()
+    const record = await bp.getRecordById(tempCatalogId, tempRecordId) 
     expect(record).toHaveProperty('id', '1')
     expect(record).toHaveProperty('values.[2]', 'test')
     expect(record).toHaveProperty('values.[4]', ['1', '2'])
 
     const resultPatch = await bp.patchRecord(tempCatalogId, tempRecordId, { 4: ['3'], 2: 'newText' })
 
-    const patchedRecord = await getTempRecord()
+    const patchedRecord = await bp.getRecordById(tempCatalogId, tempRecordId)
     expect(patchedRecord).toHaveProperty('values.[4]', ['3'])
     expect(patchedRecord).toHaveProperty('values.[2]', 'newText')
   })
