@@ -291,8 +291,8 @@ describe('test on live bpium', () => {
       filters: JSON.stringify(
         {
           "$and": [
-            {2: '1'},
-            {4: { "$or": [[1, 2], [2]] }}
+            { 2: '1' },
+            { 4: { "$or": [[1, 2], [2]] } }
           ]
         })
     })
@@ -319,6 +319,12 @@ describe('test on live bpium', () => {
     expect(resultUploadFile).toHaveProperty('mimeType', 'text/markdown')
     expect(resultUploadFile).toHaveProperty('title', 'README FILE.md')
 
-    bp.patchRecord(tempCatalog.id, tempRecordId, { 8: [{ id: keyFile.fileId }] })
+    await bp.patchRecord(tempCatalog.id, tempRecordId, { 8: [{ id: keyFile.fileId }] })
+    const tempRecord = await bp.getRecordById(tempCatalog.id, tempRecordId)
+
+    //Второй раз использовать id файла нельзя(!!!), но можно сделать ссылку на этот файл,  При этом в БД создается новая запись к файлу, 
+    //но физически файл остается один
+    const secondTimeFileLink = { title: tempRecord.values[8][0].title, src: tempRecord.values[8][0].url }
+    const secondUseFile = await bp.postRecord(tempCatalog.id, { 8: [secondTimeFileLink] })
   })
 })
