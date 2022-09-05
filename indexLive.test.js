@@ -2,7 +2,7 @@ const fs = require('fs')
 const moment = require('moment')
 const config = require('./config')
 const testCatalogStruct = {
-  name: 'New catalog',
+  name: 'Test-New catalog',
   icon: 'icon',
   sectionId: '2',
   fields: [
@@ -79,14 +79,14 @@ const testCatalogStruct = {
       hint: '',
       type: 'file',
       config: {
-        multiselect: false,
+        multiselect: true,
       },
     },
   ],
 }
 
 const testCatalogStruct2 = {
-  name: 'New catalog2',
+  name: 'Test- New catalog2',
   icon: 'icon',
   sectionId: '2',
   fields: [
@@ -161,12 +161,18 @@ describe('test on live bpium', () => {
     ).id
   }
 
+  /**
+   * Удаляем все каталоги  с именем начинающимся с "Test-"
+   */
   const removeTempCatalogs = async () => {
-    const catalogsUrl = bp._getUrl({ resource: 'catalog', catalogId: tempCatalogId })
-    await bp._request(catalogsUrl, 'DELETE')
 
-    const catalogsUrl2 = bp._getUrl({ resource: 'catalog', catalogId: tempCatalogId2 })
-    await bp._request(catalogsUrl2, 'DELETE')
+    const catalogs = await bp.getCatalog()
+
+    const catalogsToRemove = catalogs.filter(item => item.name.startsWith('Test-'))
+    for (let catalog of catalogsToRemove) {
+      const catalogRemoveUrl = bp._getUrl({ resource: 'catalog', catalogId: catalog.id })
+      await bp._request(catalogRemoveUrl, 'DELETE')
+    }
   }
 
   beforeAll(() => {
@@ -223,10 +229,10 @@ describe('test on live bpium', () => {
 
   it('Test patch catalog', async () => {
     expect(tempCatalog).toHaveProperty('name', testCatalogStruct.name)
-    await bp.patchCatalog(tempCatalog.id, { name: "Changed name catalog" })
+    await bp.patchCatalog(tempCatalog.id, { name: "Test- Changed name catalog" })
 
     const updatedCatalog = await bp.getCatalog(tempCatalogId)
-    expect(updatedCatalog).toHaveProperty('name', "Changed name catalog")
+    expect(updatedCatalog).toHaveProperty('name', "Test- Changed name catalog")
     expect(updatedCatalog).toHaveProperty('fields[0].name', 'Секция')
     expect(updatedCatalog).toHaveProperty('fields[1].type', 'text')
   })
@@ -326,5 +332,27 @@ describe('test on live bpium', () => {
     //но физически файл остается один
     const secondTimeFileLink = { title: tempRecord.values[8][0].title, src: tempRecord.values[8][0].url }
     const secondUseFile = await bp.postRecord(tempCatalog.id, { 8: [secondTimeFileLink] })
+  })
+
+  it('Test file methods pass param as buffer', async () => {
+    const newRecord = await bp.postRecord(tempCatalogId)
+    const keyFile = await bp.getUploadFileKeys('analize.json', 'application/json')
+
+    const data = JSON.stringify({ a: { b: [1, 2, 3, 4, 5] }, param: 'Hello!' })
+    const buffer = Buffer.from(data)
+    //ВАЖНО! нужно в буфер подать имя файла (оно нигде не отразиться как имя, но без этого работать не будет!)
+    //Это изза библиотеки form-data/lib/form.data.js
+    //строка =>  } else if (options.filename || value.name || value.path) {
+    buffer.name = "file.json"
+// console.log('buffer = ', buffer.toString())
+    const resultUploadFile = await bp.uploadFile(keyFile, buffer)
+    expect(resultUploadFile).toHaveProperty('src')
+    expect(resultUploadFile).toHaveProperty('size')
+    expect(resultUploadFile).toHaveProperty('mimeType', 'application/json')
+    expect(resultUploadFile).toHaveProperty('title', 'analize.json')
+
+
+    await bp.patchRecord(tempCatalog.id, newRecord.id, { 8: [{ id: keyFile.fileId }] })
+    const tempRecord = await bp.getRecordById(tempCatalog.id, newRecord.id)
   })
 })
