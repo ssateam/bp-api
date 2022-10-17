@@ -283,6 +283,13 @@ describe('test on live bpium', () => {
     expect(patchedRecord).toHaveProperty('values.[4]', ['3'])
     expect(patchedRecord).toHaveProperty('values.[2]', 'newText')
   })
+  it('Test add comment to history', async () => {
+    const response = await bp.addCommentToHistory(tempCatalogId, tempRecordId, 'test comment text')
+    expect(response.id).not.toBeNull()
+
+    const history = await bp.getHistory(tempCatalogId, tempRecordId)
+    expect(history).toHaveProperty('[0].payload.message', 'test comment text')
+  })
 
   it('Test select with complex filter', async () => {
     await bp.postRecord(tempCatalogId, { '2': '1', '4': [] })

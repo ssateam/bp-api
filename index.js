@@ -402,6 +402,27 @@ class BP {
   /**
    * 
    * @param {int|string} catalogId id каталога
+   * @param {int|string} recordId  id записи
+   * @param {string} message 
+   * @returns Объект такого вида
+   * ```
+   * {
+        id: '1'
+      }
+   * ```
+   */
+  async addCommentToHistory(catalogId, recordId, message) {
+    if (!catalogId) throw new Error(`catalogId is required`)
+    if (!recordId) throw new Error(`recordId is required`)
+    if (!message) throw new Error(`message is required`)
+    if (typeof message !== 'string') throw new Error(`message need to be a string`)
+    const url = this._getUrl({ resource: 'histories', catalogId, recordId })
+    const response = await this._request(url, 'POST', { "catalogId": catalogId, "recordId": recordId, "type": "COMMENT", "payload": { "message": message }})
+    return response.data
+  }
+  /**
+   * 
+   * @param {int|string} catalogId id каталога
    * @param {Object} data если нет поля data.fields, то поля каталога НЕ будут затронуты патчем, 
    * если же есть поле data.fields = [{name:'nameField', type:'text',...}, ...], 
    * то все поля будут приведены к новому виду согласно данным в поле data.fields.
