@@ -288,7 +288,7 @@ describe('test on live bpium', () => {
     expect(response).toHaveProperty('id', '1')
 
     const history = await bp.getHistory(tempCatalogId, tempRecordId)
-    expect(history[0]).toHaveProperty('payload.message', 'opopop')
+    expect(history).toHaveProperty('[0].payload.message', 'opopop')
   })
 
   it('Test select with complex filter', async () => {
