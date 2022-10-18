@@ -85,8 +85,9 @@ class BP {
       },
       maxRedirects: 0,
     })
-    this.sidCookie = (_.get(authResult, 'headers["set-cookie"]', []).find(item => item.startsWith('connect.sid=')) ?? '')
-      .replaceAll(/(connect\.sid\=[^;]+);.*$/gm, '$1')
+    const setCookies = _.get(authResult, 'headers["set-cookie"]', [])
+    const sidCookieRaw = setCookies.find(item => item.startsWith('connect.sid=')) || ''
+    this.sidCookie = sidCookieRaw.replace(/(connect\.sid\=[^;]+);.*$/gm, '$1')
 
     return authResult
   }
@@ -417,7 +418,7 @@ class BP {
     if (!message) throw new Error(`message is required`)
     if (typeof message !== 'string') throw new Error(`message need to be a string`)
     const url = this._getUrl({ resource: 'histories', catalogId, recordId })
-    const response = await this._request(url, 'POST', { "catalogId": catalogId, "recordId": recordId, "type": "COMMENT", "payload": { "message": message }})
+    const response = await this._request(url, 'POST', { "catalogId": catalogId, "recordId": recordId, "type": "COMMENT", "payload": { "message": message } })
     return response.data
   }
   /**

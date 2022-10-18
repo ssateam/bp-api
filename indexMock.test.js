@@ -2,7 +2,7 @@ const axiosMock = jest.mock('axios')
 const axios = require('axios')
 const BP = require('./index')
 
-afterAll(() => {  axios.mockRestore() })
+afterAll(() => { axios.mockRestore() })
 
 const domen = 'domen'
 const login = 'login'
@@ -12,6 +12,10 @@ const pass = 'pass'
 test('create BP', () => {
   const bp = new BP(domen, login, pass)
   expect(bp).toBeInstanceOf(BP)
+})
+
+test("minimal node version 14", () => {
+  expect(process.versions.node).toMatch(/^14\..*/)
 })
 
 test("Test guard expression new BP", () => {

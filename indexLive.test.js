@@ -309,7 +309,7 @@ describe('test on live bpium', () => {
           ]
         })
     })
-    console.log(JSON.stringify(records, null, '  '))
+    // console.log(JSON.stringify(records, null, '  '))
   })
 
   it('Test file methods', async () => {
