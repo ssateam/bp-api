@@ -4,6 +4,25 @@ const _ = require('lodash')
 const FormData = require('form-data')
 
 /**
+ * Для удобного восприятия из error убираем лишнее
+ */
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (!BP.debug && error.isAxiosError) {
+      const responseData = _.get(error, 'response.data', false)
+      error.config = '-'
+      error.request = '-'
+      error.response = {
+        status: error.response.status,
+        data: responseData
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
+/**
  * https://docs.bpium.ru/integrations/api/
  * 
  * Класс следит за состоянием  текущей сессии 
@@ -18,6 +37,8 @@ const FormData = require('form-data')
  *   notify.error(e.message)
  * }
  * ```
+ * Error из axios будет уменьшен для удобного восприятия.
+ * Для получения полного Eroor нужно поставить флаг BP.debug = true
  */
 class BP {
   /**

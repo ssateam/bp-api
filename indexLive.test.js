@@ -252,10 +252,20 @@ describe('test on live bpium', () => {
 
     //bp.getRecordById(tempCatalog, newRecordId) <= Очень плохой код,- здесь нет await и нет блока .catch (а должно быть хотябы чтото одно!)
     try {
-      await bp.getRecordById(tempCatalog, newRecordId)
+      await bp.getRecordById(tempCatalog.id, newRecordId)
       fail('it should not reach here')
     } catch (e) {
-      expect(e).toHaveProperty('response.data.code', 404)
+      // console.log(e)
+      expect(e).toHaveProperty('response.status', 404)
+      expect(e).toHaveProperty('response.data.name', 'NotFound')
+    }
+
+    try {
+      await bp.postRecord(tempCatalog, { 1000: [1, 2, 3] })
+      fail('it should not reach here')
+    } catch (e) {
+      expect(e).toHaveProperty('response.status', 404)
+      expect(e).toHaveProperty('response.data.name', 'NotFound')
     }
   })
 
@@ -351,7 +361,7 @@ describe('test on live bpium', () => {
     //Это изза библиотеки form-data/lib/form.data.js
     //строка =>  } else if (options.filename || value.name || value.path) {
     buffer.name = "file.json"
-// console.log('buffer = ', buffer.toString())
+    // console.log('buffer = ', buffer.toString())
     const resultUploadFile = await bp.uploadFile(keyFile, buffer)
     expect(resultUploadFile).toHaveProperty('src')
     expect(resultUploadFile).toHaveProperty('size')
