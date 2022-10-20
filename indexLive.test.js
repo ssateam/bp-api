@@ -193,21 +193,20 @@ describe('test on live bpium', () => {
     await expect(bpWrong.getRecords(100000)).rejects.toThrow(Error)
     await expect(bpWrong.getRecords(tempCatalogId)).rejects.toThrow(Error)
 
-    expect(spy_requestWithAuthBasic).not.toBeCalled()
+    expect(spy_requestWithAuthBasic).toBeCalledTimes(2)
   })
 
   it('Test width closed session ', async () => {
     const BP = require('./index')
     const mockbpCookieTest = new BP(config.domen, config.username, config.password, config.protocol)
+    const spy_requestWithAuthBasic = jest.spyOn(mockbpCookieTest, '_requestWithAuthBasic')
+    
     await expect(mockbpCookieTest.getCatalog()).resolves.toHaveProperty('[0].fields')
-
     //Портим сессию
     mockbpCookieTest.sidCookie = 'badSessionCookieString'
-    const spy_requestWithAuthBasic = jest.spyOn(mockbpCookieTest, '_requestWithAuthBasic')
-    const spy_updateAuth = jest.spyOn(mockbpCookieTest, '_updateAuth')
+
     await expect(mockbpCookieTest.getCatalog()).resolves.toHaveProperty('[0].fields')
-    expect(spy_updateAuth).toBeCalled()
-    expect(spy_requestWithAuthBasic).not.toBeCalled()
+    expect(spy_requestWithAuthBasic).toBeCalledTimes(2)
   })
 
   it('Test width bad session access and last basicRequest', async () => {

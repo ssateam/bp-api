@@ -88,32 +88,6 @@ class BP {
   }
 
   /**
-   * Обновляет сессию 
-   * @returns ответ на запрос авторизации
-   */
-  async _updateAuth() {
-    const authUrl = this._getUrl({ resource: 'login' })
-    const authResult = await axios({
-      auth: {
-        username: this.login,
-        password: this.password,
-      },
-      timeout: this.timeout,
-      url: authUrl,
-      method: 'GET',
-      headers: {
-        "Content-type": "application/x-www-form-urlencoded"
-      },
-      maxRedirects: 0,
-    })
-    const setCookies = _.get(authResult, 'headers["set-cookie"]', [])
-    const sidCookieRaw = setCookies.find(item => item.startsWith('connect.sid=')) || ''
-    this.sidCookie = sidCookieRaw.replace(/(connect\.sid\=[^;]+);.*$/gm, '$1')
-
-    return authResult
-  }
-
-  /**
    * @param {string} url к ресурсу
    * @param {string} method метод обращения к ресурсу
    * @param {Object} data параметры тела запроса
@@ -144,7 +118,7 @@ class BP {
    * @returns вернет полный ответ из библиотеки axios
    */
   async _requestWithAuthBasic(url, method, data = {}, params = {}) {
-    return await axios({
+    const result = await axios({
       auth: {
         username: this.login,
         password: this.password,
@@ -161,6 +135,12 @@ class BP {
       },
       data: data,
     })
+
+    const setCookies = _.get(result, 'headers["set-cookie"]', [])
+    const sidCookieRaw = setCookies.find(item => item.startsWith('connect.sid=')) || ''
+    this.sidCookie = sidCookieRaw.replace(/(connect\.sid\=[^;]+);.*$/gm, '$1')
+
+    return result
   }
 
   /**
@@ -174,29 +154,16 @@ class BP {
    */
   async _request(url, method, data = {}, params = {}) {
     if (!this.sidCookie) {
-      await this._updateAuth()
-    }
-    try {
-      return await this._requestWithAuthCookie(url, method, data, params)
-    } catch (e1) {
-      const isAuthError = _.get(e1, 'response.status', 0) === 401
-      if (this.sidCookie && isAuthError) {
-        try {
-          await this._updateAuth()
-          return await this._requestWithAuthCookie(url, method, data, params)
-        } catch (e2) {
-          const isAuthError = _.get(e2, 'response.status', 0) === 401
-          if (isAuthError) {
-            return await this._requestWithAuthBasic(url, method, data, params)
-          }
-          else {
-            throw e2
-          }
-        }
-      } else {
-        throw e1
+      return await this._requestWithAuthBasic(url, method, data, params)
+    } else
+      try {
+        return await this._requestWithAuthCookie(url, method, data, params)
+      } catch (errorCookie) {
+        const isAuthError = _.get(errorCookie, 'response.status', 0) === 401
+        if (!isAuthError) { throw errorCookie }
+
+        return await this._requestWithAuthBasic(url, method, data, params)
       }
-    }
   }
 
   /**
