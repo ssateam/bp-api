@@ -9,9 +9,8 @@ const FormData = require('form-data')
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (!BP.debug && error.isAxiosError) {
+    if (!BP.debug && error.isAxiosError && _.get(error, 'response.status', false)) {
       const responseData = _.get(error, 'response.data', false)
-      error.config = '-'
       error.request = '-'
       error.response = {
         status: error.response.status,
