@@ -83,6 +83,8 @@ class BP {
         return `${this.baseUrl}/catalogs/${opt.catalogId}/values`
       case 'login':
         return `${this.protocol}://${this.domen}/auth/login`
+      case 'availableRecords':
+        return `${this.baseUrl}/catalogs/${opt.catalogId}/fields/${opt.fieldId}/availableRecords`
     }
   }
 
@@ -297,6 +299,29 @@ class BP {
     const response = await this._request(url, 'GET', undefined, params)
     return response.data
   }
+
+  /**
+   * Получение доступных для связывания записей
+   * https://docs.bpium.ru/integrations/api/search/availablerecords
+   * @param {int|string} catalogId id каталога 
+   * @param {int|string} fieldId  id поля к котрому происходит подбор записей
+   * @param {Object} params параметры запроса
+   * ```
+   * {
+   *   title: "абв",//поисковая строка для фильтрации
+   *   catalogId: "20"//ограничивает выдачу по определенному каталогу
+   * }
+   * ```
+   * @return вернет список доступных для связвания записей
+   */
+  async getAvailablerecords(catalogId, fieldId, params = {}) {
+    if (!catalogId) throw new Error(`catalogId is required`)
+    if (!fieldId) throw new Error(`fieldId is required`)
+    let url = this._getUrl({ resource: 'availableRecords', catalogId, fieldId })
+    let response = await this._request(url, 'GET', undefined, params)
+    return response.data
+  }
+
   /**
    * https://docs.bpium.ru/integrations/api/data/records 
    * Добавляет запись в каталог 

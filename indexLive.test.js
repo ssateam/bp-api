@@ -200,7 +200,7 @@ describe('test on live bpium', () => {
     const BP = require('./index')
     const mockbpCookieTest = new BP(config.domen, config.username, config.password, config.protocol)
     const spy_requestWithAuthBasic = jest.spyOn(mockbpCookieTest, '_requestWithAuthBasic')
-    
+
     await expect(mockbpCookieTest.getCatalog()).resolves.toHaveProperty('[0].fields')
     //Портим сессию
     mockbpCookieTest.sidCookie = 'badSessionCookieString'
@@ -278,6 +278,14 @@ describe('test on live bpium', () => {
     const newRecord = await bp.getRecordById(tempCatalogId2, newRecordId, { fields: [2, { id: 3 }] })
     // console.log('newRecord = ', JSON.stringify(newRecord, null, 2))
 
+  })
+
+  it('Test a linked field for getAvailablerecords', async () => {
+    const records = await bp.getAvailablerecords(tempCatalogId, 7/*Связанный объект*/, { title: 'комп' })
+    expect(records).toHaveLength(1)
+    expect(records[0]).toHaveProperty('catalogId', '11')
+    expect(records[0]).toHaveProperty('recordId', '1')
+    expect(records[0]).toHaveProperty('catalogTitle', 'Компании')
   })
 
   it('Test patch field', async () => {
@@ -371,4 +379,8 @@ describe('test on live bpium', () => {
     await bp.patchRecord(tempCatalog.id, newRecord.id, { 8: [{ id: keyFile.fileId }] })
     const tempRecord = await bp.getRecordById(tempCatalog.id, newRecord.id)
   })
+
+
+
+
 })
