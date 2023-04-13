@@ -14,7 +14,7 @@ axios.interceptors.response.use(
       error.request = '-'
       error.response = {
         status: error.response.status,
-        data: responseData
+        data: responseData,
       }
     }
     return Promise.reject(error)
@@ -23,10 +23,10 @@ axios.interceptors.response.use(
 
 /**
  * https://docs.bpium.ru/integrations/api/
- * 
- * Класс следит за состоянием  текущей сессии 
+ *
+ * Класс следит за состоянием  текущей сессии
  * и если нужно пролонгирует её, или получит снова
- * 
+ *
  * Нужно ОБЯЗАТЕЛЬНО обрабатывать исключения при выполнениях запросов!, иначе возможен выброс до остановки приложения
  * ```
  * //например так
@@ -42,11 +42,11 @@ axios.interceptors.response.use(
 class BP {
   /**
    * Конструктор объекта для последующей работы с api bpium
-   * @param {string} domen домен 
+   * @param {string} domen домен
    * @param {string} login логин
    * @param {string} password пароль
    * @param {string} protocol протокол, по умолчанию https
-   * @param {int} timeout по умолчанию 30 секунд 
+   * @param {int} timeout по умолчанию 30 секунд
    */
   constructor(domen, login, password, protocol = 'https', timeout = 30000) {
     if (!domen) throw new Error(`domen can't be empty`)
@@ -68,7 +68,7 @@ class BP {
       case 'catalog':
         return `${this.baseUrl}/catalogs/${opt.catalogId ? opt.catalogId : ''}`
       case 'section':
-        return `${this.baseUrl}/sections/${opt.sectionId}`
+        return `${this.baseUrl}/sections/${opt.sectionId ? opt.sectionId : ''}`
       case 'view':
         return `${this.baseUrl}/catalogs/${opt.catalogId}/views/${opt.viewId}`
       case 'board':
@@ -105,7 +105,7 @@ class BP {
         return qs.stringify(params)
       },
       headers: {
-        "Cookie": this.sidCookie,
+        Cookie: this.sidCookie,
         'Content-type': 'application/json',
       },
       data: data,
@@ -138,7 +138,7 @@ class BP {
     })
 
     const setCookies = _.get(result, 'headers["set-cookie"]', [])
-    const sidCookieRaw = setCookies.find(item => item.startsWith('connect.sid=')) || ''
+    const sidCookieRaw = setCookies.find((item) => item.startsWith('connect.sid=')) || ''
     this.sidCookie = sidCookieRaw.replace(/(connect\.sid\=[^;]+);.*$/gm, '$1')
 
     return result
@@ -146,7 +146,7 @@ class BP {
 
   /**
    * https://docs.bpium.ru/integrations/api
-   * 
+   *
    * @param {string} url к ресурсу
    * @param {string} method метод обращения к ресурсу
    * @param {Object} data параметры тела запроса
@@ -161,7 +161,9 @@ class BP {
         return await this._requestWithAuthCookie(url, method, data, params)
       } catch (errorCookie) {
         const isAuthError = _.get(errorCookie, 'response.status', 0) === 401
-        if (!isAuthError) { throw errorCookie }
+        if (!isAuthError) {
+          throw errorCookie
+        }
 
         return await this._requestWithAuthBasic(url, method, data, params)
       }
@@ -209,7 +211,7 @@ class BP {
    * https://docs.bpium.ru/integrations/api/data/catalogs#poluchit-katalog
    * @param {int|string} catalogId id каталога
    * @returns если catalogId не пусто, то вернет описание полей каталога в виде объекта https://docs.bpium.ru/integrations/api/data/catalogs#poluchit-katalog
-   * , если catalogId пустой, то вернет массив описаний всех каталогов 
+   * , если catalogId пустой, то вернет массив описаний всех каталогов
    */
   async getCatalog(catalogId = '') {
     const url = this._getUrl({ resource: 'catalog', catalogId })
@@ -242,11 +244,11 @@ class BP {
   }
   /**
    * https://docs.bpium.ru/manual/reports/widgets
-   * @param {int|string} boardId 
+   * @param {int|string} boardId
    * @param {Object} params параметры запроса
-   * @param {int|string} widgetId 
-   * @param {*} type 
-   * @returns 
+   * @param {int|string} widgetId
+   * @param {*} type
+   * @returns
    */
   async getWidget(boardId, params = {}, widgetId = 'new', type = 'values') {
     if (!boardId) throw new Error(`boardId is required`)
@@ -261,7 +263,7 @@ class BP {
    * @param {int|string} recordId id записи
    * @param {Object} params параметры запроса (см. ссылку)
    * @returns вернет массив записей истории. Если recordId не указан, то вернет историю по всему каталогу
-   * 
+   *
    */
   async getHistory(catalogId, recordId = '', params = {}) {
     if (!catalogId) throw new Error(`catalogId is required`)
@@ -276,7 +278,7 @@ class BP {
    * https://docs.bpium.ru/integrations/api/agregate/values
    * @param {int|string} catalogId  id каталога
    * @param {Object} params параметры запроса
-   * @returns 
+   * @returns
    */
   async getValues(catalogId, params = {}) {
     if (!catalogId) throw new Error(`catalogId is required`)
@@ -285,7 +287,7 @@ class BP {
     return response.data
   }
   /**
-   * Получение связей с записью 
+   * Получение связей с записью
    * https://docs.bpium.ru/integrations/api/data/relations-relations
    * @param {int|string} catalogId id каталога
    * @param {int|string} recordId  id записи
@@ -303,7 +305,7 @@ class BP {
   /**
    * Получение доступных для связывания записей
    * https://docs.bpium.ru/integrations/api/search/availablerecords
-   * @param {int|string} catalogId id каталога 
+   * @param {int|string} catalogId id каталога
    * @param {int|string} fieldId  id поля к котрому происходит подбор записей
    * @param {Object} params параметры запроса
    * ```
@@ -323,8 +325,8 @@ class BP {
   }
 
   /**
-   * https://docs.bpium.ru/integrations/api/data/records 
-   * Добавляет запись в каталог 
+   * https://docs.bpium.ru/integrations/api/data/records
+   * Добавляет запись в каталог
    * @param {int|string} catalogId id каталога в который будет добавлена запись
    * @param {Object} data Данные для добавления в bpium {"2": "test text", "3": [1,2]}
    * @returns идентификатор созданной записи, пример - {"id": "31015"}
@@ -339,29 +341,29 @@ class BP {
   /**
    * https://docs.bpium.ru/integrations/api/data/catalogs
    * Создать каталог
-   * 
+   *
    * @param {Object} data объект описывающий создаваемый каталог с полями:
    * ```
    *name: 'New catalog',
    *icon: 'icon',
    *sectionId: '2',
    *fields: [
-  *    {
-  *      name: 'Секция',
-  *      hint: '',
-  *      type: 'group',
-  *      config: {},
-  *    },
-  *    {
-  *      name: 'Текст',
-  *      hint: 'Подсказка к полю текст',
-  *      type: 'text',
-  *      config: {
-  *        type: 'text',
-  *      },
-  *    },
-  *    ...
-  *    ]
+   *    {
+   *      name: 'Секция',
+   *      hint: '',
+   *      type: 'group',
+   *      config: {},
+   *    },
+   *    {
+   *      name: 'Текст',
+   *      hint: 'Подсказка к полю текст',
+   *      type: 'text',
+   *      config: {
+   *        type: 'text',
+   *      },
+   *    },
+   *    ...
+   *    ]
    * }
    * ```
    * @returns вернет объект такого вида:
@@ -377,9 +379,9 @@ class BP {
     return response.data
   }
   /**
-   * 
-   * @param {Object} data 
-   * @returns 
+   *
+   * @param {Object} data
+   * @returns
    */
   async postSection(data = {}) {
     if (typeof data != 'object') throw new Error(`data must be an object`)
@@ -430,14 +432,19 @@ class BP {
     if (!message) throw new Error(`message is required`)
     if (typeof message !== 'string') throw new Error(`message need to be a string`)
     const url = this._getUrl({ resource: 'histories', catalogId, recordId })
-    const response = await this._request(url, 'POST', { "catalogId": catalogId, "recordId": recordId, "type": "COMMENT", "payload": { "message": message } })
+    const response = await this._request(url, 'POST', {
+      catalogId: catalogId,
+      recordId: recordId,
+      type: 'COMMENT',
+      payload: { message: message },
+    })
     return response.data
   }
   /**
-   * 
+   *
    * @param {int|string} catalogId id каталога
-   * @param {Object} data если нет поля data.fields, то поля каталога НЕ будут затронуты патчем, 
-   * если же есть поле data.fields = [{name:'nameField', type:'text',...}, ...], 
+   * @param {Object} data если нет поля data.fields, то поля каталога НЕ будут затронуты патчем,
+   * если же есть поле data.fields = [{name:'nameField', type:'text',...}, ...],
    * то все поля будут приведены к новому виду согласно данным в поле data.fields.
    * @returns пусто
    */
@@ -453,8 +460,8 @@ class BP {
    * Изменить отдел
    * https://docs.bpium.ru/integrations/api/data/sections
    * @param {int|string} sectionId id отдела
-   * @param {Object} data 
-   * @returns 
+   * @param {Object} data
+   * @returns
    */
   async patchSection(sectionId, data = {}) {
     if (!sectionId) throw new Error(`sectionId is required`)
@@ -467,11 +474,11 @@ class BP {
   /**
    * Изменить вид
    * https://docs.bpium.ru/integrations/api/data/views
-   * 
+   *
    * @param {int|string} catalogId id каталога
-   * @param {int|string} viewId 
-   * @param {Object} data 
-   * @returns 
+   * @param {int|string} viewId
+   * @param {Object} data
+   * @returns
    */
   async patchView(catalogId, viewId, data = {}) {
     if (!catalogId) throw new Error(`sectionId is required`)
@@ -498,7 +505,7 @@ class BP {
   }
   /**
    * https://docs.bpium.ru/integrations/api/data/catalogs#udalit-katalog
-   * Удаляет каталог по его id 
+   * Удаляет каталог по его id
    * @param {int|string} catalogId id каталог
    * @returns пустой ответ, если удаление успешное
    */
@@ -526,7 +533,7 @@ class BP {
 
   /**
    * https://docs.bpium.ru/integrations/api/data/records
-   * 
+   *
    * @param {string|int} catalogId id каталога
    * @param {Object} params  параметры запроса
    * @param {int} maxLimit ограничение количества записей
@@ -640,7 +647,7 @@ class BP {
 
   /**
    * Удобный таймер сделан для получения паузы в асинхронных функциях
-   * Использовать можно так: 
+   * Использовать можно так:
    * ```
    *   await bp.pause(30000) //pause 30sec
    * ```
