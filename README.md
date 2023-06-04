@@ -1,5 +1,7 @@
 # bp-api
-small library for work with bpium api
+small library for work with bpium api.
+
+Used Typescript.
 
 # Simple usage
 
@@ -23,7 +25,7 @@ const records = await bp.getAllRecords(catalogId, {
 })
 ```
 
-##Patch record##
+## Patch record 
 
 ```js
 await bp.patchRecord(catalogId, records[0].id, {
