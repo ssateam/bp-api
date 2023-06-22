@@ -47,17 +47,17 @@ axios.interceptors.response.use(
 interface IOpt {
   /**Имя ресурса API */
   resource:
-    | 'record'
-    | 'catalog'
-    | 'section'
-    | 'view'
-    | 'board'
-    | 'histories'
-    | 'relations'
-    | 'file'
-    | 'values'
-    | 'login'
-    | 'availableRecords'
+  | 'record'
+  | 'catalog'
+  | 'section'
+  | 'view'
+  | 'board'
+  | 'histories'
+  | 'relations'
+  | 'file'
+  | 'values'
+  | 'login'
+  | 'availableRecords'
 
   viewId?: ID
   boardId?: ID
@@ -639,10 +639,7 @@ class BP {
    */
   async getAllRecords(
     catalogId: ID,
-    params: {
-      limit?: number
-      offset?: number
-    } = {},
+    params: IBpRecordsQueryFilter = {},
     maxLimit: number = 5000
   ): Promise<IBpRecord[]> {
     if (!catalogId) throw new Error(`catalogId is required`)
@@ -654,7 +651,7 @@ class BP {
     while (totalRecords.length < maxLimit) {
       const fullDelta = maxLimit - totalRecords.length
       const chunkLimit = fullDelta <= initChunkLimit ? fullDelta : initChunkLimit
-      const records = await this.getRecords(catalogId, { limit: chunkLimit, offset: initOffset + totalRecords.length })
+      const records = await this.getRecords(catalogId, { ...params, limit: chunkLimit, offset: initOffset + totalRecords.length })
       totalRecords.push(...records)
 
       if (records.length < chunkLimit) break
