@@ -420,9 +420,9 @@ class BP {
    * @param data Данные для добавления в bpium {"2": "test text", "3": [1,2]}
    * @returns идентификатор созданной записи, пример - {"id": "31015"}
    */
-  async postRecord(catalogId: ID, data: IBpValues = {}): Promise<IBpRecord> {
+  async postRecord(catalogId: ID, data: IBpValues): Promise<IBpRecord> {
     if (!catalogId) throw new Error(`catalogId is required`)
-    if (typeof data != 'object') throw new Error(`data must be an object`)
+    if (!data || typeof data != 'object') throw new Error(`data must be an object`)
     const url = this._getUrl({ resource: 'record', catalogId })
     const response = await this._request(url, 'POST', { values: data })
     return response.data
