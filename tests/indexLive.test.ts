@@ -223,7 +223,7 @@ describe('test on live bpium', () => {
       get: function () {
         return 'badSessionCookieString'
       },
-      set: function (newValue) {},
+      set: function (newValue) { },
     })
 
     const spy_requestWithAuthBasic = jest.spyOn(mockbpCookieTest as any, '_requestWithAuthBasic')
@@ -280,8 +280,9 @@ describe('test on live bpium', () => {
     })
     expect(newRecordId).not.toBeNull()
 
-    const newRecord = await bp.getRecordById(tempCatalogId2, newRecordId, { fields: [2] })
-    // console.log('newRecord = ', JSON.stringify(newRecord, null, 2))
+    const newRecord = await bp.getRecordById(tempCatalogId2, newRecordId, { fields: [2, { fieldId: 3, fields: { [tempCatalogId]: ['1', '2', '3'] } }] })
+    expect(newRecord.values[3][0].recordValues[2]).toEqual('test')
+    // console.log('tempCatalogId = ', tempCatalogId, 'newRecord = ', JSON.stringify(newRecord, null, 2))
   })
 
   it('Test a linked field for getAvailableRecords', async () => {

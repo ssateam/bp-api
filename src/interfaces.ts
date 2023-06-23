@@ -85,12 +85,39 @@ export interface IBpValues {
   [key: string]: any
 }
 
+type CatalogID = string | number
+type FieldID = string | number
+type FieldsType = (FieldID | { fieldId: FieldID, fields?: Record<CatalogID, FieldsType> })[]
+
 /**Простой Запрос */
 export interface IBpRecordsQuery {
-  /**Нужно ли подгружать связанные поля */
+  /**Нужно ли подгружать связанные поля, список берется из настроек поля каталога*/
   withFieldsAdditional?: boolean
-  /**Список полей которые нужно подгрузить */
-  fields?: (string | number)[]
+  /**
+   * Список полей которые нужно подгрузить как в искомом каталоге, так и связанном каталоге(и так далее по рекурсии)
+   * Например:
+   * ```
+   * [
+   *   1 ,
+   *  '2', 
+   *  {fieldId: 3, fields: 
+   *     {'56': // <- Это catalogId
+   *       [48, 3, 
+   *         { fieldId: 23, fields: 
+   *           { 43: // <- Это catalogId
+   *             [{ fieldId: 4, fields: 
+   *               { 56: // <- Это catalogId
+   *                  [14] } 
+   *             }] 
+   *           } 
+   *         }
+   *       ]
+   *     }
+   *  }
+   * ]
+   * ```
+   * */
+  fields?: FieldsType
 }
 
 /**
