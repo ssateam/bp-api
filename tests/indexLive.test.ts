@@ -364,11 +364,14 @@ describe('test on live bpium', () => {
     const keyFile = await bp.getUploadFileKeys('analize.json', 'application/json')
 
     const data = JSON.stringify({ a: { b: [1, 2, 3, 4, 5] }, param: 'Hello!' })
-    const buffer: any = Buffer.from(data)
+    const buffer = Buffer.from(data)
     //ВАЖНО! нужно в буфер подать имя файла (оно нигде не отразиться как имя, но без этого работать не будет!)
     //Это изза библиотеки form-data/lib/form.data.js
     //строка =>  } else if (options.filename || value.name || value.path) {
-    buffer.name = 'file.json'
+    
+    // @ts-ignore
+    // buffer.name = 'file.json'
+
     // console.log('buffer = ', buffer.toString())
     const resultUploadFile = await bp.uploadFile(keyFile, buffer)
     expect(resultUploadFile).toHaveProperty('src')

@@ -696,7 +696,7 @@ class BP {
    * Загрузка файла в bpium по ключу
    * 
    * @param {*} fileKeys id ключа который получен в через метод getUploadFileKeys
-   * @param {*} stream поток данных для отрпавки на сервер
+   * @param {*} streamOrBuffer поток данных для отрпавки на сервер или буфер
    * @returns вернет объект похожый на этот:
    * ```
    * {
@@ -709,10 +709,17 @@ class BP {
    */
   async uploadFile(
     fileKeys: IFileKey,
-    stream: stream.Readable
+    streamOrBuffer: stream.Readable | Buffer
   ): Promise<{ src: string; mimeType: string; title: string; size: number }> {
-    if (!stream) throw new Error(`readble stream is required`)
+    if (!streamOrBuffer) throw new Error(`readble stream or buffer is required`)
     if (!fileKeys) throw new Error(`fileKeys is required. First use method getUploadFileKeys`)
+
+    if (streamOrBuffer instanceof Buffer
+      //@ts-ignore
+      && !streamOrBuffer.name) {
+      //@ts-ignore
+      streamOrBuffer.name = 'file.json' //Нужно для работы с буфером
+    }
 
     const formData = new FormData()
     formData.append('key', fileKeys.fileKey)
@@ -721,7 +728,7 @@ class BP {
     formData.append('Policy', fileKeys.police)
     formData.append('Signature', fileKeys.signature)
     formData.append('Content-Type', fileKeys.mimeType)
-    formData.append('file', stream)
+    formData.append('file', streamOrBuffer)
 
     const formHeaders: FormData.Headers = formData.getHeaders()
     const fileLength: number = await new Promise<number>((resolve, reject): void => {
@@ -774,5 +781,8 @@ class BP {
       }, timer)
     })
   }
+
+  static 
+
 }
 export = BP
