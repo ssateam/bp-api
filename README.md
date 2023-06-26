@@ -12,7 +12,7 @@ Used Typescript.
 **Get all records by filter**
 
 ```js
-const BP = require('bp-api')
+const BP = require('bp-api').default
 const bp = new BP(your_domen, your_login, your_password, protocol (https - default value), timeout(30000 default value))
 
 const records = await bp.getAllRecords(catalogId, {
@@ -24,6 +24,8 @@ const records = await bp.getAllRecords(catalogId, {
   ]
 })
 ```
+> Обратите внимание что `const BP = require('bp-api').default` имеет дополнительное обращение к свойству default.
+Такой импорт нужно использовать начиная с версии **0.5.7-beta.1**
 
 ## Patch record 
 
@@ -33,4 +35,5 @@ await bp.patchRecord(catalogId, records[0].id, {
 })
 ```
 
-# [params filters and methods](https://docs.bpium.ru/integrations/api/)
+## API BPIUM\`а  
+https://docs.bpium.ru/integrations/api/

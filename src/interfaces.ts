@@ -85,9 +85,9 @@ export interface IBpValues {
   [key: string]: any
 }
 
-type CatalogID = string | number
-type FieldID = string | number
-type FieldsType = (FieldID | { fieldId: FieldID, fields?: Record<CatalogID, FieldsType> })[]
+type BpCatalogID = string | number
+type BpFieldID = string | number
+export type BpFieldsType = (BpFieldID | { fieldId: BpFieldID, fields?: Record<BpCatalogID, BpFieldsType> })[]
 
 /**Простой Запрос */
 export interface IBpRecordsQuery {
@@ -117,7 +117,7 @@ export interface IBpRecordsQuery {
    * ]
    * ```
    * */
-  fields?: FieldsType
+  fields?: BpFieldsType
 }
 
 /**
