@@ -1,6 +1,6 @@
 const axiosMock = jest.mock('axios')
 const axios = require('axios')
-const BP = require('../src/index')
+const BP = require('../src/index').default
 
 afterAll(() => { jest.restoreAllMocks() })
 

@@ -782,7 +782,8 @@ class BP {
     })
   }
 
-  static 
 
 }
-export = BP
+
+export default BP
+export * from './interfaces'
