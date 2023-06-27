@@ -3,7 +3,7 @@ import { IBpCatalog, IBpCatalogField, ID } from '../src/interfaces'
 import fs from 'fs'
 import moment from 'moment'
 import config from '../config'
-import BP from '../src/index'
+import BP, { BpValueNumber, BpValueText, IBpValues } from '../src/index'
 
 const testCatalogStruct: IBpCatalog = {
   name: 'Test-New catalog',
@@ -368,7 +368,7 @@ describe('test on live bpium', () => {
     //ВАЖНО! нужно в буфер подать имя файла (оно нигде не отразиться как имя, но без этого работать не будет!)
     //Это изза библиотеки form-data/lib/form.data.js
     //строка =>  } else if (options.filename || value.name || value.path) {
-    
+
     // @ts-ignore
     // buffer.name = 'file.json'
 
@@ -382,4 +382,36 @@ describe('test on live bpium', () => {
     await bp.patchRecord(tempCatalog.id!, newRecord.id, { 8: [{ id: keyFile.fileId }] })
     const tempRecord = await bp.getRecordById(tempCatalog.id!, newRecord.id)
   })
+
+
+
+  it('Test return values types from bpium', async () => {
+
+    interface IResult extends IBpValues {
+      4: string
+    }
+
+    try {
+      const result = await bp.getRecordById<IResult>(22, 2, {
+        fields: [{
+          fieldId: 4, fields: {
+            197: [3, {
+              fieldId: 4, fields: {
+                '3': ['1', 2, 3, 4],
+                660: [2, { fieldId: 3 }, 4]
+              }
+            }]
+          }
+        }]
+      })
+      console.log(JSON.stringify(result.values, null, 2))
+
+
+    } catch (e) {
+      // console.log(e)
+      expect(e).toHaveProperty('response.status', 404)
+      expect(e).toHaveProperty('response.data.name', 'NotFound')
+    }
+  })
+
 })

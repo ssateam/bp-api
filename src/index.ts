@@ -11,7 +11,6 @@ import {
   IBpRecordsQueryFilter,
   IBpSection,
   IBpView,
-  IBpValues,
   ID,
   IFileKey,
   IBpViewAll,
@@ -19,6 +18,7 @@ import {
   IBpRelation,
 } from './interfaces'
 import stream from 'stream'
+import { IBpValues } from './values'
 
 /**
  * Для удобного восприятия из error убираем лишнее
@@ -240,11 +240,11 @@ class BP {
    * @param  params  набор возвращаемых полей записей, формат: ["2", "3"]
    * @returns Вернет запись из каталога catalogId и id равный recordId
    */
-  public async getRecordById(
+  public async getRecordById<ValuesType extends IBpValues>(
     catalogId: ID,
     recordId: ID,
     params: IBpRecordsQuery = {}
-  ): Promise<IBpRecord & IBpRecordExtra> {
+  ): Promise<IBpRecord<ValuesType> & IBpRecordExtra> {
     if (!catalogId) throw new Error(`catalogId is required`)
     if (!recordId) throw new Error(`recordId is required`)
     let url = this._getUrl({ resource: 'record', catalogId, recordId })
@@ -270,7 +270,7 @@ class BP {
    * ```
    * @returns вернет массив записей
    */
-  async getRecords(catalogId: ID, params?: IBpRecordsQueryFilter): Promise<IBpRecord[]> {
+  async getRecords<ValuesType extends IBpValues>(catalogId: ID, params?: IBpRecordsQueryFilter): Promise<(IBpRecord<ValuesType>)[]> {
     if (!catalogId) throw new Error(`catalogId is required`)
     const url = this._getUrl({ resource: 'record', catalogId, recordId: '' })
     const response = await this._request(url, 'GET', undefined, params)
@@ -637,21 +637,21 @@ class BP {
    * @param {int} maxLimit ограничение количества записей
    * @returns массив записей из каталога
    */
-  async getAllRecords(
+  async getAllRecords<ValuesType extends IBpValues>(
     catalogId: ID,
     params: IBpRecordsQueryFilter = {},
     maxLimit: number = 5000
-  ): Promise<IBpRecord[]> {
+  ): Promise<(IBpRecord<ValuesType>)[]> {
     if (!catalogId) throw new Error(`catalogId is required`)
 
     const initOffset = params.offset ?? 0
     const initChunkLimit = params.limit ?? 500
-    const totalRecords: IBpRecord[] = []
+    const totalRecords: (IBpRecord<ValuesType>)[] = []
 
     while (totalRecords.length < maxLimit) {
       const fullDelta = maxLimit - totalRecords.length
       const chunkLimit = fullDelta <= initChunkLimit ? fullDelta : initChunkLimit
-      const records = await this.getRecords(catalogId, { ...params, limit: chunkLimit, offset: initOffset + totalRecords.length })
+      const records = await this.getRecords<ValuesType>(catalogId, { ...params, limit: chunkLimit, offset: initOffset + totalRecords.length })
       totalRecords.push(...records)
 
       if (records.length < chunkLimit) break

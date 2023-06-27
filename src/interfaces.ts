@@ -1,3 +1,5 @@
+import { IBpValues } from "./values"
+
 /** */
 export type ID = string | number
 
@@ -57,11 +59,11 @@ export interface IBpCatalogField {
 }
 
 /**Запись */
-export interface IBpRecord {
+export interface IBpRecord<ValuesType extends IBpValues = IBpValues> {
   id: string
   catalogId: string
   title: string
-  values: IBpValues
+  values: ValuesType
 }
 /**Запись расширенные поля*/
 export interface IBpRecordExtra {
@@ -78,11 +80,6 @@ export interface IBpLinkedRecord {
   recordId: ID
   recordTitle: string
   recordValues: IBpValues
-}
-
-/**Значения записи */
-export interface IBpValues {
-  [key: string]: any
 }
 
 type BpCatalogID = string | number
