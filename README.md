@@ -25,7 +25,7 @@ const records = await bp.getAllRecords(catalogId, {
 })
 ```
 > Обратите внимание что `const BP = require('bp-api').default` имеет дополнительное обращение к свойству default.
-Такой импорт нужно использовать начиная с версии **0.5.7-beta.1**
+Такой импорт нужно использовать начиная с версии **0.6.0**
 
 ## Patch record 
 
@@ -37,3 +37,6 @@ await bp.patchRecord(catalogId, records[0].id, {
 
 ## API BPIUM\`а  
 https://docs.bpium.ru/integrations/api/
+
+## Debug mode
+Для получения полного Error нужно поставить флаг BP.debug = true

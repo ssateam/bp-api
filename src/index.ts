@@ -85,11 +85,11 @@ interface IOpt {
  * }
  * ```
  * Error из axios будет уменьшен для удобного восприятия.
- * Для получения полного Eroor нужно поставить флаг BP.debug = true
+ * Для получения полного Error нужно поставить флаг BP.debug = true
  */
 class BP {
   /**Определяет режим вывода ошибок, если true, то ошибки будут выводиться как есть*/
-  static debug: boolean = true
+  static debug: boolean = false
 
   public readonly baseUrl: string
   private sidCookie: string = ''
