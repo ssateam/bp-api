@@ -142,6 +142,24 @@ class BP {
   }
 
   /**
+   * Есть проблема с сериализацией полей fields и filters в расширенном синтаксисе.
+   * Этот метод решает эту проблему.
+   * @param params Параметры для сериализации
+   * @returns вернет сериализованную строку из подготовленных параметров.
+   */
+  protected requestParamsSerializer(params: any) {
+    if (!params || typeof params != 'object') { return params }
+
+    if (params.fields) {
+      params.fields = JSON.stringify(params.fields)
+    }
+    if (params.filters && _.isPlainObject(params.filters)) {
+      params.filters = JSON.stringify(params.filters)
+    }
+    return qs.stringify(params)
+  }
+
+  /**
    * @param {string} url к ресурсу
    * @param {string} method метод обращения к ресурсу
    * @param {Object} data параметры тела запроса
@@ -159,8 +177,8 @@ class BP {
       url: url,
       method,
       params,
-      paramsSerializer: function (params) {
-        return qs.stringify(params)
+      paramsSerializer: (params) => {
+        return this.requestParamsSerializer(params)
       },
       headers: {
         Cookie: this.sidCookie,
@@ -191,8 +209,8 @@ class BP {
       url: url,
       method: method,
       params: params,
-      paramsSerializer: function (params) {
-        return qs.stringify(params)
+      paramsSerializer: (params) => {
+        return this.requestParamsSerializer(params)
       },
       headers: {
         'Content-type': 'application/json',
@@ -259,13 +277,12 @@ class BP {
    * Если нужно использовать расширенный фильтр, то его можно подать так:
    * ```
    *  const records = await bp.getRecords(tempCatalogId, {
-      filters: JSON.stringify(
-        {
-          "$and": [
-            {2: '1'},
-            {4: { "$or": [[1, 2], [2]] }}
-          ]
-        })
+      filters: {
+        "$and": [
+          {2: '1'},
+          {4: { "$or": [[1, 2], [2]] }}
+        ]
+      }
     })
    * ```
    * @returns вернет массив записей

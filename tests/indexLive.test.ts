@@ -322,12 +322,22 @@ describe('test on live bpium', () => {
     const result1And2 = await bp.getRecords(tempCatalogId, { filters: [{ fieldId: 4, value: [2, 3] }] })
     expect(result1And2).toHaveLength(1)
 
-    const records = await bp.getRecords(tempCatalogId, {
+    const recordsOld = await bp.getRecords(tempCatalogId, {
       filters: JSON.stringify({
         $and: [{ 2: '1' }, { 4: { $or: [[1, 2], [2]] } }],
       }),
     })
-    // console.log(JSON.stringify(records, null, '  '))
+
+    expect(recordsOld).toHaveLength(1)
+    
+    const recordsNew = await bp.getRecords(tempCatalogId, {
+      filters: {
+        $and: [{ 2: '1' }, { 4: { $or: [[1, 2], [2]] } }],
+      },
+    })
+
+    expect(recordsNew).toHaveLength(1)
+    // console.log(JSON.stringify(recordsOld, null, 2))
   })
 
   it('Test file methods', async () => {
@@ -404,7 +414,7 @@ describe('test on live bpium', () => {
           }
         }]
       })
-      console.log(JSON.stringify(result.values, null, 2))
+      // console.log(JSON.stringify(result.values, null, 2))
 
 
     } catch (e) {

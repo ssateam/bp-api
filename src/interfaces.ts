@@ -135,7 +135,10 @@ export interface IBpRecordsQueryFilter extends IBpRecordsQuery {
   sortType?: 1 | -1
   limit?: number
   offset?: number
-  filters?: string | IBpSimpleRecordsQueryFilter[]
+  /**
+   * Тип string устаревший deprecated
+   */
+  filters?: string | { [key: ID]: any } | IBpSimpleRecordsQueryFilter[]
   [key: string]: any
 }
 
