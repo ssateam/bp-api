@@ -31,7 +31,7 @@ axios.interceptors.response.use(
       const responseData = _.get(error, 'response.data', false)
       error.request = '-'
       error.response = {
-        status: error.response.status,
+        status: error.response?.status,
         data: responseData,
       }
       error.message =
@@ -221,7 +221,7 @@ class BP {
     const setCookies: string[] = _.get(result, 'headers["set-cookie"]', [])
     const sidCookieRaw = setCookies.find((item: string) => item.startsWith('connect.sid=')) || ''
     this.sidCookie = sidCookieRaw.replace(/(connect\.sid\=[^;]+);.*$/gm, '$1')
-
+        
     return result
   }
 
@@ -236,16 +236,16 @@ class BP {
    */
   private async _request(url: string, method: Method, data: object = {}, params: object = {}): Promise<AxiosResponse> {
     if (!this.sidCookie) {
-      return await this._requestWithAuthBasic(url, method, data, params)
+            return await this._requestWithAuthBasic(url, method, data, params)
     } else
       try {
-        return await this._requestWithAuthCookie(url, method, data, params)
+                return await this._requestWithAuthCookie(url, method, data, params)
       } catch (errorCookie: any) {
         const isAuthError = _.get(errorCookie, 'response.status', 0) == 401
         if (!isAuthError) {
           throw errorCookie
         }
-
+        
         return await this._requestWithAuthBasic(url, method, data, params)
       }
   }
