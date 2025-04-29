@@ -221,7 +221,7 @@ class BP {
     const setCookies: string[] = _.get(result, 'headers["set-cookie"]', [])
     const sidCookieRaw = setCookies.find((item: string) => item.startsWith('connect.sid=')) || ''
     this.sidCookie = sidCookieRaw.replace(/(connect\.sid\=[^;]+);.*$/gm, '$1')
-        
+
     return result
   }
 
@@ -236,16 +236,16 @@ class BP {
    */
   private async _request(url: string, method: Method, data: object = {}, params: object = {}): Promise<AxiosResponse> {
     if (!this.sidCookie) {
-            return await this._requestWithAuthBasic(url, method, data, params)
+      return await this._requestWithAuthBasic(url, method, data, params)
     } else
       try {
-                return await this._requestWithAuthCookie(url, method, data, params)
+        return await this._requestWithAuthCookie(url, method, data, params)
       } catch (errorCookie: any) {
         const isAuthError = _.get(errorCookie, 'response.status', 0) == 401
         if (!isAuthError) {
           throw errorCookie
         }
-        
+
         return await this._requestWithAuthBasic(url, method, data, params)
       }
   }
@@ -289,6 +289,13 @@ class BP {
    */
   async getRecords<ValuesType extends IBpValues>(catalogId: ID, params?: IBpRecordsQueryFilter): Promise<(IBpRecord<ValuesType>)[]> {
     if (!catalogId) throw new Error(`catalogId is required`)
+
+    if (Array.isArray(params.filters)) {
+      params.filters = params.filters.filter(item => {
+        return item.fieldId && Array.isArray(item.value) && item.value?.length == 0 ? false : true
+      })
+    }
+
     const url = this._getUrl({ resource: 'record', catalogId, recordId: '' })
     const response = await this._request(url, 'GET', undefined, params)
     return response.data
@@ -346,8 +353,15 @@ class BP {
    * @param type
    * @returns
    */
-  async getWidget(boardId: ID, params = {}, widgetId = 'new', type = 'values') {
+  async getWidget(boardId: ID, params = {} as any, widgetId = 'new', type = 'values') {
     if (!boardId) throw new Error(`boardId is required`)
+
+    if (Array.isArray(params?.recordsFilter?.filters)) {
+      params.recordsFilter.filters = params.recordsFilter.filters.filter(item => {
+        return item.fieldId && Array.isArray(item.value) && item.value?.length == 0 ? false : true
+      })
+    }
+
     const url = this._getUrl({ resource: 'board', boardId, widgetId, type })
     const response = await this._request(url, 'GET', undefined, params)
     return response.data
