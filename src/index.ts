@@ -16,6 +16,8 @@ import {
   IBpViewAll,
   IBpHistory,
   IBpRelation,
+  IBpMessage,
+  IBpMessageBody,
 } from './interfaces'
 import stream from 'stream'
 import { IBpValues } from './values'
@@ -58,6 +60,8 @@ interface IOpt {
   | 'values'
   | 'login'
   | 'availableRecords'
+  | 'messages'
+  | 'chatOptions'
 
   viewId?: ID
   boardId?: ID
@@ -67,6 +71,7 @@ interface IOpt {
   sectionId?: ID
   catalogId?: ID
   recordId?: ID
+  messageId?: ID
 }
 
 /**
@@ -138,6 +143,10 @@ class BP {
         return `${this.protocol}://${this.domen}/auth/login`
       case 'availableRecords':
         return `${this.baseUrl}/catalogs/${opt.catalogId}/fields/${opt.fieldId}/availableRecords`
+      case 'messages':
+        return `${this.baseUrl}/catalogs/${opt.catalogId}/records/${opt.recordId}/messages${opt.messageId ? `/${opt.messageId}` : ''}`
+      case 'chatOptions':
+        return `${this.baseUrl}/catalogs/${opt.catalogId}/records/${opt.recordId}/chatOptions/${opt.recordId}`
     }
   }
 
@@ -659,6 +668,116 @@ class BP {
     return response.data
   }
 
+  /**
+   * https://docs.bpium.ru/docs/integracii/api/data/soobsheniya-messages
+   * Получить сообщения с записи
+   *
+   * @param catalogId id каталога
+   * @param recordId  id записи
+   * @returns вернет массив сообщений записи
+   */
+  async getMessages(catalogId: ID, recordId: ID): Promise<IBpMessage[]> {
+    if (!catalogId) throw new Error(`catalogId is required`)
+    if (!recordId) throw new Error(`recordId is required`)
+    const url = this._getUrl({ resource: 'messages', catalogId, recordId })
+    const response = await this._request(url, 'GET')
+    return response.data
+  }
+  /**
+   * https://docs.bpium.ru/docs/integracii/api/data/soobsheniya-messages
+   * Создать сообщение в записи
+   *
+   * @param catalogId id каталога
+   * @param recordId  id записи
+   * @param message текст сообщения или объект вида
+   * ```
+   * {
+   *   text: 'Как дела?',
+   *   mentions: [],
+   *   attachments: [],
+   *   replyMessageId: null,
+   * }
+   * ```
+   * @returns Объект такого вида
+   * ```
+   * { id: '7' }
+   * ```
+   */
+  async postMessage(catalogId: ID, recordId: ID, message: string | IBpMessageBody): Promise<{ id: string }> {
+    if (!catalogId) throw new Error(`catalogId is required`)
+    if (!recordId) throw new Error(`recordId is required`)
+    if (!message) throw new Error(`message is required`)
+    if (typeof message != 'string' && typeof message != 'object') throw new Error(`message must be a string or an object`)
+    const data: IBpMessageBody = typeof message == 'string' ? { text: message } : message
+    const url = this._getUrl({ resource: 'messages', catalogId, recordId })
+    const response = await this._request(url, 'POST', data)
+    return response.data
+  }
+  /**
+   * https://docs.bpium.ru/docs/integracii/api/data/soobsheniya-messages
+   * Изменить сообщение в записи
+   *
+   * @param catalogId id каталога
+   * @param recordId  id записи
+   * @param messageId id сообщения
+   * @param message новый текст сообщения или объект вида
+   * ```
+   * {
+   *   text: 'hello world',
+   *   mentions: [],
+   *   attachments: [],
+   *   replyMessageId: null,
+   * }
+   * ```
+   * @returns пусто
+   */
+  async patchMessage(catalogId: ID, recordId: ID, messageId: ID, message: string | IBpMessageBody): Promise<void> {
+    if (!catalogId) throw new Error(`catalogId is required`)
+    if (!recordId) throw new Error(`recordId is required`)
+    if (!messageId) throw new Error(`messageId is required`)
+    if (!message) throw new Error(`message is required`)
+    if (typeof message != 'string' && typeof message != 'object') throw new Error(`message must be a string or an object`)
+    const data: IBpMessageBody = typeof message == 'string' ? { text: message } : message
+    const url = this._getUrl({ resource: 'messages', catalogId, recordId, messageId })
+    const response = await this._request(url, 'PATCH', data)
+    return response.data
+  }
+  /**
+   * https://docs.bpium.ru/docs/integracii/api/data/soobsheniya-messages
+   * Удалить сообщение из записи
+   *
+   * @param catalogId id каталога
+   * @param recordId  id записи
+   * @param messageId id удаляемого сообщения
+   * @returns пусто
+   */
+  async deleteMessage(catalogId: ID, recordId: ID, messageId: ID): Promise<void> {
+    if (!catalogId) throw new Error(`catalogId is required`)
+    if (!recordId) throw new Error(`recordId is required`)
+    if (!messageId) throw new Error(`messageId is required`)
+    const url = this._getUrl({ resource: 'messages', catalogId, recordId, messageId })
+    const response = await this._request(url, 'DELETE')
+    return response.data
+  }
+  /**
+   * https://docs.bpium.ru/docs/integracii/api/data/soobsheniya-messages
+   * Подписаться на сообщения в записи или отписаться от них
+   *
+   * @param catalogId id каталога
+   * @param recordId  id записи
+   * @param subscribe true - подписаться (по умолчанию), false - отписаться
+   * @returns Объект такого вида
+   * ```
+   * { subscribe: true }
+   * ```
+   */
+  async subscribeToMessages(catalogId: ID, recordId: ID, subscribe: boolean = true): Promise<{ subscribe: boolean }> {
+    if (!catalogId) throw new Error(`catalogId is required`)
+    if (!recordId) throw new Error(`recordId is required`)
+    const url = this._getUrl({ resource: 'chatOptions', catalogId, recordId })
+    const response = await this._request(url, 'PATCH', { subscribe })
+    return response.data
+  }
   /**
    * https://docs.bpium.ru/integrations/api/data/records
    * Получение списка записей с возможностью фильтрации, данные собираются несколькими походами 

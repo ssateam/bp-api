@@ -208,3 +208,43 @@ export interface IFileKey {
   name: string
   mimeType: string
 }
+
+/**Автор сообщения */
+export interface IBpMessageAuthor {
+  sectionId: ID
+  sectionDbId: number
+  catalogDbId: number
+  catalogId: string
+  catalogTitle: string
+  catalogIcon: string
+  recordDbId: number
+  recordId: ID
+  recordTitle: string
+  isRemoved: boolean
+}
+
+/**
+ * Сообщение записи
+ * https://docs.bpium.ru/docs/integracii/api/data/soobsheniya-messages
+ */
+export interface IBpMessage {
+  id: ID
+  catalogId: string
+  author: IBpMessageAuthor
+  attachments: Record<string, any>[]
+  createdDate: string
+  deleted: boolean
+  deletedDate: string | null
+  mention: ID[]
+  reply: IBpMessage | null
+  text: string
+  updatedDate: string | null
+}
+
+/**Тело запроса на создание или изменение сообщения */
+export interface IBpMessageBody {
+  text?: string
+  mentions?: ID[]
+  attachments?: Record<string, any>[]
+  replyMessageId?: ID | null
+}
