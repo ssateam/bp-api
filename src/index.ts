@@ -182,10 +182,11 @@ class BP {
     url: string,
     method: Method,
     data: object = {},
-    params: object = {}
+    params: object = {},
+    timeout: number = this.timeout
   ): Promise<AxiosResponse<any>> {
     return await axios.request({
-      timeout: this.timeout,
+      timeout,
       url: url,
       method,
       params,
@@ -210,14 +211,15 @@ class BP {
     url: string,
     method: Method,
     data: object = {},
-    params: object = {}
+    params: object = {},
+    timeout: number = this.timeout
   ): Promise<AxiosResponse<any>> {
     const result = await axios.request({
       auth: {
         username: this.login,
         password: this.password,
       },
-      timeout: this.timeout,
+      timeout,
       url: url,
       method: method,
       params: params,
@@ -246,19 +248,25 @@ class BP {
    * @param params параметры запроса
    * @returns вернет полный ответ из библиотеки axios
    */
-  private async _request(url: string, method: Method, data: object = {}, params: object = {}): Promise<AxiosResponse> {
+  private async _request(
+    url: string,
+    method: Method,
+    data: object = {},
+    params: object = {},
+    timeout: number = this.timeout
+  ): Promise<AxiosResponse> {
     if (!this.sidCookie) {
-      return await this._requestWithAuthBasic(url, method, data, params)
+      return await this._requestWithAuthBasic(url, method, data, params, timeout)
     } else
       try {
-        return await this._requestWithAuthCookie(url, method, data, params)
+        return await this._requestWithAuthCookie(url, method, data, params, timeout)
       } catch (errorCookie: any) {
         const isAuthError = _.get(errorCookie, 'response.status', 0) == 401
         if (!isAuthError) {
           throw errorCookie
         }
 
-        return await this._requestWithAuthBasic(url, method, data, params)
+        return await this._requestWithAuthBasic(url, method, data, params, timeout)
       }
   }
 
@@ -870,19 +878,29 @@ class BP {
    * `getUploadFileKeys` (например, браузер через presigned POST).
    *
    * В значение поля записи файл дальше передаётся по id: `{ 8: [{ id: file.id }] }`.
+   * ⚠️ Превью Bpium строит синхронно внутри запроса (jimp): для фото с телефона 12–24 Мп
+   * это 10–30 секунд, а стандартный таймаут клиента — 30 с. Для изображений передавайте
+   * `timeout` с запасом (например, 180000).
    * @param fileKeys ключи, полученные через getUploadFileKeys
    * @param size размер файла в байтах, если известен (перекрывает size из fileKeys)
+   * @param timeout таймаут запроса в мс; по умолчанию — таймаут клиента
    */
-  async completeFileUpload(fileKeys: IFileKey, size?: number): Promise<IBpFile> {
+  async completeFileUpload(fileKeys: IFileKey, size?: number, timeout?: number): Promise<IBpFile> {
     if (!fileKeys?.fileId) throw new Error(`fileKeys.fileId is required. First use method getUploadFileKeys`)
     const fileSize = size ?? fileKeys.size
     const url = this._getUrl({ resource: 'file', fileId: fileKeys.fileId })
-    const { data } = await this._request(url, 'PATCH', {
-      name: fileKeys.name,
-      mimeType: fileKeys.mimeType,
-      url: fileKeys.fileKey,
-      ...(typeof fileSize === 'number' && { size: fileSize }),
-    })
+    const { data } = await this._request(
+      url,
+      'PATCH',
+      {
+        name: fileKeys.name,
+        mimeType: fileKeys.mimeType,
+        url: fileKeys.fileKey,
+        ...(typeof fileSize === 'number' && { size: fileSize }),
+      },
+      {},
+      timeout
+    )
     return data as IBpFile
   }
 
@@ -892,6 +910,7 @@ class BP {
    *
    * @param {*} fileKeys id ключа который получен в через метод getUploadFileKeys
    * @param {*} streamOrBuffer поток данных для отрпавки на сервер или буфер
+   * @param completeTimeout таймаут шага completeFileUpload в мс (см. примечание там про изображения)
    * @returns вернет объект похожый на этот:
    * ```
    * {
@@ -910,7 +929,8 @@ class BP {
    */
   async uploadFile(
     fileKeys: IFileKey,
-    streamOrBuffer: stream.Readable | Buffer
+    streamOrBuffer: stream.Readable | Buffer,
+    completeTimeout?: number
   ): Promise<IBpFile & { src: string }> {
     if (!streamOrBuffer) throw new Error(`readble stream or buffer is required`)
     if (!fileKeys) throw new Error(`fileKeys is required. First use method getUploadFileKeys`)
@@ -962,7 +982,7 @@ class BP {
         maxContentLength: Infinity,
         maxBodyLength: Infinity,
       })
-      const file = await this.completeFileUpload(fileKeys, fileSize)
+      const file = await this.completeFileUpload(fileKeys, fileSize, completeTimeout)
       return {
         ...file,
         src: file.url,
