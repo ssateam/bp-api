@@ -207,6 +207,36 @@ export interface IFileKey {
   uploadUrl: string
   name: string
   mimeType: string
+  /**Размер файла в байтах, если был передан в getUploadFileKeys */
+  size?: number
+}
+
+/**
+ * Метаданные файла-изображения, которые Bpium заполняет после completeFileUpload.
+ * В ответе completeFileUpload/uploadFile `preview` и `thumbnail` — ключи S3 без хоста,
+ * в значении поля записи (getRecordById и т.п.) — полные ссылки.
+ */
+export interface IBpFileMetadata {
+  /**Размеры оригинала в пикселях */
+  size?: { width: number; height: number }
+  /**preview (~700px по большей стороне) */
+  preview?: string
+  /**thumbnail (128x128) */
+  thumbnail?: string
+}
+
+/**Файл в файловом хранилище Bpium (ответ PATCH /files/:id и значение поля типа file) */
+export interface IBpFile {
+  id: number
+  title: string
+  mimeType: string | null
+  size: number | null
+  /**Полная ссылка на файл */
+  url: string
+  /**`s3` — файл в хранилище Bpium, `url` — внешняя ссылка */
+  typeStorage: 's3' | 'url'
+  /**Превью есть только у изображений в хранилище Bpium (`typeStorage: 's3'`) */
+  metadata: IBpFileMetadata | null
 }
 
 /**Автор сообщения */

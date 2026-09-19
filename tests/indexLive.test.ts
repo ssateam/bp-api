@@ -356,11 +356,15 @@ describe('test on live bpium', () => {
 
     const resultUploadFile = await bp.uploadFile(keyFile, stream)
     expect(resultUploadFile).toHaveProperty('src')
-    expect(resultUploadFile).toHaveProperty('size')
+    expect(resultUploadFile).toHaveProperty('url', resultUploadFile.src)
+    expect(resultUploadFile).toHaveProperty('id', keyFile.fileId)
+    expect(resultUploadFile).toHaveProperty('typeStorage', 's3')
+    // size — реальный размер файла, а не multipart-тела
+    expect(resultUploadFile).toHaveProperty('size', fs.statSync(`${__dirname}/../README.md`).size)
     expect(resultUploadFile).toHaveProperty('mimeType', 'text/markdown')
     expect(resultUploadFile).toHaveProperty('title', 'README FILE.md')
 
-    await bp.patchRecord(tempCatalog.id!, tempRecordId, { 8: [{ id: keyFile.fileId }] })
+    await bp.patchRecord(tempCatalog.id!, tempRecordId, { 8: [{ id: resultUploadFile.id }] })
     const tempRecord = await bp.getRecordById(tempCatalog.id!, tempRecordId)
 
     //Второй раз использовать id файла нельзя(!!!), но можно сделать ссылку на этот файл,  При этом в БД создается новая запись к файлу,
@@ -385,12 +389,36 @@ describe('test on live bpium', () => {
     // console.log('buffer = ', buffer.toString())
     const resultUploadFile = await bp.uploadFile(keyFile, buffer)
     expect(resultUploadFile).toHaveProperty('src')
-    expect(resultUploadFile).toHaveProperty('size')
+    expect(resultUploadFile).toHaveProperty('id', keyFile.fileId)
+    expect(resultUploadFile).toHaveProperty('typeStorage', 's3')
+    expect(resultUploadFile).toHaveProperty('size', buffer.length)
     expect(resultUploadFile).toHaveProperty('mimeType', 'application/json')
     expect(resultUploadFile).toHaveProperty('title', 'analize.json')
 
-    await bp.patchRecord(tempCatalog.id!, newRecord.id, { 8: [{ id: keyFile.fileId }] })
+    await bp.patchRecord(tempCatalog.id!, newRecord.id, { 8: [{ id: resultUploadFile.id }] })
     const tempRecord = await bp.getRecordById(tempCatalog.id!, newRecord.id)
+  })
+
+  it('Test image upload gets preview and thumbnail', async () => {
+    // 1x1 PNG. Превью Bpium строит только для изображений с mimeType, переданным в getUploadFileKeys
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      'base64'
+    )
+    const keyFile = await bp.getUploadFileKeys('pixel.png', 'image/png', 'remoteStorage', png.length)
+    expect(keyFile).toHaveProperty('size', png.length)
+
+    const file = await bp.uploadFile(keyFile, png)
+    expect(file).toHaveProperty('typeStorage', 's3')
+    expect(file.metadata).toHaveProperty('preview')
+    expect(file.metadata).toHaveProperty('thumbnail')
+    expect(file.metadata?.size).toEqual({ width: 1, height: 1 })
+
+    // В записи Bpium отдаёт превью полными ссылками
+    const newRecord = await bp.postRecord(tempCatalogId, { 8: [{ id: file.id }] })
+    const tempRecord = await bp.getRecordById(tempCatalog.id!, newRecord.id)
+    expect(tempRecord.values[8][0].id).toBe(file.id)
+    expect(tempRecord.values[8][0].metadata.preview).toMatch(/^https?:\/\//)
   })
 
 

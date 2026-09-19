@@ -3,6 +3,29 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [Semantic Versioning](https://semver.org/lang/ru/).
 
+## [0.8.0] - 2026-09-19
+
+### Добавлено
+
+- `completeFileUpload(fileKeys, size?)` — третий, недостающий шаг загрузки файла:
+  `PATCH /files/:id`, после которого Bpium переводит файл в `typeStorage: 's3'`
+  и для изображений синхронно строит `metadata.preview` (~700px) и `metadata.thumbnail` (128×128).
+  Нужен, когда файл в S3 заливает не библиотека, а клиент по ключам из `getUploadFileKeys`.
+- Типы `IBpFile`, `IBpFileMetadata`; поле `size` в `IFileKey`.
+- Ресурс `file` в `_getUrl` принимает `fileId`.
+
+### Изменено
+
+- `getUploadFileKeys(name, mimeType, typeStorage, size?)` — `mimeType` и `size` теперь
+  передаются в Bpium. Раньше `mimeType` только сохранялся в результате, и Bpium не знал,
+  что файл — изображение: превью не строились.
+- `uploadFile` после загрузки в S3 вызывает `completeFileUpload` и возвращает `IBpFile & { src }`:
+  добавились `id`, `url`, `typeStorage`, `metadata`; `src` сохранён для совместимости.
+  `size` теперь равен размеру файла (раньше — длине всего multipart-тела).
+  В запись файл стоит передавать по `id` (`{ 8: [{ id: file.id }] }`) — Bpium привяжет
+  этот же файл; при передаче `{ url }` заводится вторая запись файла как внешняя ссылка,
+  а исходная остаётся в статусе ожидания.
+
 ## [0.7.0] - 2026-08-31
 
 ### Добавлено

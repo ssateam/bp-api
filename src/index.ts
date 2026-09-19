@@ -13,6 +13,7 @@ import {
   IBpView,
   ID,
   IFileKey,
+  IBpFile,
   IBpViewAll,
   IBpHistory,
   IBpRelation,
@@ -20,6 +21,7 @@ import {
   IBpMessageBody,
 } from './interfaces'
 import stream from 'stream'
+import fs from 'fs'
 import { IBpValues } from './values'
 
 /**
@@ -72,6 +74,7 @@ interface IOpt {
   catalogId?: ID
   recordId?: ID
   messageId?: ID
+  fileId?: ID
 }
 
 /**
@@ -136,7 +139,7 @@ class BP {
       case 'relations':
         return `${this.baseUrl}/catalogs/${opt.catalogId}/records/${opt.recordId}/relations`
       case 'file':
-        return `${this.baseUrl}/files/`
+        return `${this.baseUrl}/files/${opt.fileId ?? ''}`
       case 'values':
         return `${this.baseUrl}/catalogs/${opt.catalogId}/values`
       case 'login':
@@ -813,9 +816,14 @@ class BP {
   }
   /**
    * https://docs.bpium.ru/integrations/api/data/files#zagruzka-faila-v-failovoe-khranilishe-bpium
-   * @param {string} name 
-   * @param string} mimeType 
-   * @param {string} typeStorage 
+   * Шаг 1 из 3 загрузки файла в хранилище Bpium: регистрирует файл и выдаёт ключи для загрузки в S3.
+   * Дальше — загрузка в S3 (`uploadFile` или напрямую по ключам) и `completeFileUpload`.
+   *
+   * mimeType важен: по нему Bpium решает, строить ли превью изображения на шаге 3.
+   * @param {string} name
+   * @param {string} mimeType
+   * @param {string} typeStorage
+   * @param {number} size размер файла в байтах, если известен
    * @returns вернет объект похожый на этот:
    * ```
    * {
@@ -832,39 +840,88 @@ class BP {
       }
    * ```
    */
-  async getUploadFileKeys(name: string = '', mimeType = '', typeStorage = 'remoteStorage'): Promise<IFileKey> {
+  async getUploadFileKeys(
+    name: string = '',
+    mimeType = '',
+    typeStorage = 'remoteStorage',
+    size?: number
+  ): Promise<IFileKey> {
     let urlFile = this._getUrl({ resource: 'file' })
     let { data } = await this._request(urlFile, 'POST', {
       name: name,
       typeStorage: typeStorage,
+      ...(mimeType && { mimeType }),
+      ...(typeof size === 'number' && { size }),
     })
     const fileKeys = data as IFileKey
     fileKeys.name = name
     fileKeys.mimeType = mimeType
+    fileKeys.size = size
     return fileKeys
   }
+
+  /**
+   * Шаг 3 из 3 загрузки файла в хранилище Bpium: сообщает Bpium, что файл лежит в S3 по ключу.
+   * Файл переходит в `typeStorage: 's3'`, для изображений Bpium синхронно строит
+   * `metadata.preview` и `metadata.thumbnail`. Без этого шага файл остаётся в статусе
+   * ожидания, а превью не появляется.
+   *
+   * Нужен, когда файл в S3 заливает не `uploadFile`, а кто-то ещё по ключам из
+   * `getUploadFileKeys` (например, браузер через presigned POST).
+   *
+   * В значение поля записи файл дальше передаётся по id: `{ 8: [{ id: file.id }] }`.
+   * @param fileKeys ключи, полученные через getUploadFileKeys
+   * @param size размер файла в байтах, если известен (перекрывает size из fileKeys)
+   */
+  async completeFileUpload(fileKeys: IFileKey, size?: number): Promise<IBpFile> {
+    if (!fileKeys?.fileId) throw new Error(`fileKeys.fileId is required. First use method getUploadFileKeys`)
+    const fileSize = size ?? fileKeys.size
+    const url = this._getUrl({ resource: 'file', fileId: fileKeys.fileId })
+    const { data } = await this._request(url, 'PATCH', {
+      name: fileKeys.name,
+      mimeType: fileKeys.mimeType,
+      url: fileKeys.fileKey,
+      ...(typeof fileSize === 'number' && { size: fileSize }),
+    })
+    return data as IBpFile
+  }
+
   /**
    * https://docs.bpium.ru/integrations/api/data/files#zagruzka-faila-v-failovoe-khranilishe-bpium
-   * Загрузка файла в bpium по ключу
-   * 
+   * Шаги 2 и 3 загрузки: заливает файл в S3 по ключам и завершает загрузку через `completeFileUpload`.
+   *
    * @param {*} fileKeys id ключа который получен в через метод getUploadFileKeys
    * @param {*} streamOrBuffer поток данных для отрпавки на сервер или буфер
    * @returns вернет объект похожый на этот:
    * ```
    * {
+        id: 31,
         src: 'https://storage.yandexcloud.net:443/bpium-userdata/3571/c994a2d2-7af4-401d-a31b-a175db708bb4/README FILE.md',
+        url: 'https://storage.yandexcloud.net:443/bpium-userdata/3571/c994a2d2-7af4-401d-a31b-a175db708bb4/README FILE.md',
         mimeType: 'text/markdown',
         title: 'README FILE.md',
-        size: 1902
+        size: 1902,
+        typeStorage: 's3',
+        metadata: null
       }
    * ```
+   * `src` оставлен для совместимости. В запись файл лучше передавать по `id` —
+   * тогда Bpium привяжет этот же файл, а не заведёт вторую запись со ссылкой.
    */
   async uploadFile(
     fileKeys: IFileKey,
     streamOrBuffer: stream.Readable | Buffer
-  ): Promise<{ src: string; mimeType: string; title: string; size: number }> {
+  ): Promise<IBpFile & { src: string }> {
     if (!streamOrBuffer) throw new Error(`readble stream or buffer is required`)
     if (!fileKeys) throw new Error(`fileKeys is required. First use method getUploadFileKeys`)
+
+    // Реальный размер файла: для буфера — его длина, для fs.ReadStream — по файлу.
+    // fileLength ниже — длина всего multipart-тела, для size она не годится.
+    const fileSize: number | undefined = Buffer.isBuffer(streamOrBuffer)
+      ? streamOrBuffer.length
+      : typeof (streamOrBuffer as fs.ReadStream).path === 'string'
+        ? fs.statSync((streamOrBuffer as fs.ReadStream).path).size
+        : fileKeys.size
 
     if (streamOrBuffer instanceof Buffer
       //@ts-ignore
@@ -905,11 +962,10 @@ class BP {
         maxContentLength: Infinity,
         maxBodyLength: Infinity,
       })
+      const file = await this.completeFileUpload(fileKeys, fileSize)
       return {
-        src: `${fileKeys.uploadUrl}/${fileKeys.fileKey}`,
-        mimeType: fileKeys.mimeType,
-        title: fileKeys.name,
-        size: fileLength,
+        ...file,
+        src: file.url,
       }
     } catch (e) {
       console.log(e)
